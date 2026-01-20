@@ -8,7 +8,7 @@ const MACHINE_CATEGORIES = [
   {
     id: "MAKING",
     title: "MAKING MACHINE",
-    types: ["S-7500", "S-7000", "S-6000E", "S-6000", "S-5000", "S-4000"],
+    types: ["S-7500", "S-7000", "S-6000E", "S-6000", "S-5000", "S-4000", "FM400"],
   },
   {
     id: "PACKING",
@@ -76,7 +76,7 @@ export default function DashboardBos() {
         
         {/* HEADER */}
         <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 mb-6">
-          <div className="flex justify-between items-start mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
             <div>
               <h1 className="text-xl md:text-2xl font-black uppercase tracking-tight">Monitoring Produksi</h1>
               <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">PT DJITOE MESINDO</p>

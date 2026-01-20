@@ -8,7 +8,7 @@ const MACHINE_CATEGORIES = [
   {
     id: "MAKING",
     title: "MAKING MACHINE",
-    types: ["S-7500", "S-7000", "S-6000E", "S-6000", "S-5000", "S-4000"],
+    types: ["S-7500", "S-7000", "S-6000E", "S-6000", "S-5000", "S-4000", "FM400"],
   },
   {
     id: "PACKING",
