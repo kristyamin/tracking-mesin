@@ -8,47 +8,51 @@ export default function SuperAdminPage() {
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // State untuk Edit/Tambah
   const [showModal, setShowModal] = useState(false);
   const [formUser, setFormUser] = useState({ id: "", username: "", password: "", role: "admin" });
   const [isEditing, setIsEditing] = useState(false);
 
+  // 1. CEK KEAMANAN & AMBIL DATA
   useEffect(() => {
-    fetchUsers();
+    const role = sessionStorage.getItem("user_role");
+    if (role !== "super_admin") {
+      router.push("/");
+    } else {
+      fetchUsers();
+    }
   }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
+    // Ambil semua user, urutkan berdasarkan ID biar rapi saat ditambah
     const { data, error } = await supabase.from("users").select("*").order("id", { ascending: true });
     if (error) alert("Gagal ambil data user");
     else setUsers(data || []);
     setLoading(false);
   };
 
-  // HAPUS USER
+  // 2. FUNGSI CRUD (LOGIKA DARI KODE BAPAK)
   const handleDelete = async (id: number) => {
-    if(!confirm("Yakin hapus user ini?")) return;
+    if(!confirm("⚠️ Yakin hapus user ini selamanya?")) return;
     const { error } = await supabase.from("users").delete().eq("id", id);
     if(error) alert("Gagal hapus!");
     else fetchUsers();
   };
 
-  // SIAPKAN EDIT
   const handleEditClick = (user: any) => {
     setFormUser(user);
     setIsEditing(true);
     setShowModal(true);
   };
 
-  // SIAPKAN TAMBAH BARU
   const handleAddClick = () => {
     setFormUser({ id: "", username: "", password: "", role: "admin" });
     setIsEditing(false);
     setShowModal(true);
   };
 
-  // SIMPAN DATA (BAIK BARU MAUPUN EDIT)
   const handleSave = async () => {
     if(!formUser.username || !formUser.password) return alert("Username & Password wajib diisi!");
 
@@ -78,97 +82,159 @@ export default function SuperAdminPage() {
     }
   };
 
-  return (
-    <main className="min-h-screen bg-slate-900 p-6 font-sans text-slate-200">
-      <div className="max-w-4xl mx-auto">
+  // 3. LOGIKA GROUPING (MEMISAHKAN BARISAN)
+  const groupSuperAdmin = users.filter(u => u.role === 'super_admin');
+  const groupBoss = users.filter(u => u.role === 'boss');
+  const groupAdmin = users.filter(u => u.role === 'admin');
+
+  // Komponen Kartu User (Biar kodingan rapi)
+  const UserCard = ({ user, icon, colorClass, badgeColor }: any) => (
+    <div className={`bg-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 border border-slate-700 hover:border-${colorClass}-500 transition group shadow-lg relative overflow-hidden`}>
+        {/* Hiasan Background */}
+        <div className={`absolute top-0 left-0 w-1 h-full bg-${colorClass}-500`}></div>
         
-        {/* Header */}
-        <div className="flex justify-between items-center mb-10">
-            <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                🔐 SUPER ADMIN <span className="text-sm bg-red-600 px-3 py-1 rounded-full font-bold">ROOT ACCESS</span>
-            </h1>
-            <button onClick={() => router.push("/")} className="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-bold transition">
-                🚪 Logout
+        <div className="flex items-center gap-5 w-full md:w-auto">
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold bg-slate-900 shadow-inner ${colorClass === 'purple' ? 'text-purple-400' : (colorClass === 'yellow' ? 'text-yellow-400' : 'text-blue-400')}`}>
+                {icon}
+            </div>
+            <div>
+                <p className="font-black text-xl text-white tracking-wide">{user.username}</p>
+                <div className="flex gap-2 mt-1">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${badgeColor}`}>
+                        {user.role}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+                        ID: {user.id}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div className="flex items-center gap-4 w-full md:w-auto justify-end">
+            <div className="flex flex-col text-right mr-4">
+                <span className="text-[10px] text-slate-500 font-bold uppercase">Password</span>
+                <span className="font-mono text-slate-300 bg-black/30 px-3 py-1 rounded-lg border border-slate-700/50">
+                    {user.password}
+                </span>
+            </div>
+            <button onClick={() => handleEditClick(user)} className="bg-slate-700 hover:bg-blue-600 text-white p-3 rounded-xl transition shadow-md">
+                ✏️
+            </button>
+            {/* Tombol Hapus (Disembunyikan kalau Super Admin menghapus dirinya sendiri bisa bahaya, tapi logic bapak membolehkan) */}
+            <button onClick={() => handleDelete(user.id)} className="bg-slate-700 hover:bg-red-600 text-white p-3 rounded-xl transition shadow-md">
+                🗑️
             </button>
         </div>
+    </div>
+  );
 
-        {/* Tabel User */}
-        <div className="bg-slate-800 rounded-3xl p-8 shadow-2xl border border-slate-700">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-white">Daftar Akun Terdaftar</h2>
-                <button onClick={handleAddClick} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-bold shadow-lg transition">
-                    + Tambah User
+  return (
+    <main className="min-h-screen bg-slate-950 p-6 font-sans text-slate-200 pb-20">
+      <div className="max-w-5xl mx-auto">
+        
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-4">
+            <div>
+                <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 tracking-tighter uppercase">
+                    Super Admin Panel
+                </h1>
+                <p className="text-slate-500 font-bold text-sm tracking-widest mt-1">ACCESS MANAGEMENT SYSTEM V2.0</p>
+            </div>
+            <div className="flex gap-3">
+                <button onClick={handleAddClick} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-black shadow-lg shadow-blue-900/50 transition flex items-center gap-2 active:scale-95">
+                    <span>+</span> NEW USER
+                </button>
+                <button onClick={() => router.push("/")} className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-3 rounded-xl font-bold transition border border-slate-700 active:scale-95">
+                    🚪 LOGOUT
                 </button>
             </div>
-
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="text-slate-400 border-b border-slate-600 text-xs uppercase tracking-wider">
-                            <th className="p-4">Role</th>
-                            <th className="p-4">Username</th>
-                            <th className="p-4">Password (Plain)</th>
-                            <th className="p-4 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-sm">
-                        {users.map((user) => (
-                            <tr key={user.id} className="border-b border-slate-700 hover:bg-slate-700/50 transition">
-                                <td className="p-4">
-                                    <span className={`px-3 py-1 rounded-lg font-black text-[10px] uppercase 
-                                        ${user.role === 'super_admin' ? 'bg-red-500/20 text-red-400' : 
-                                          user.role === 'boss' ? 'bg-purple-500/20 text-purple-400' : 
-                                          'bg-blue-500/20 text-blue-400'}`}>
-                                        {user.role}
-                                    </span>
-                                </td>
-                                <td className="p-4 font-bold text-white">{user.username}</td>
-                                <td className="p-4 font-mono text-yellow-400 bg-slate-900/50 rounded">{user.password}</td>
-                                <td className="p-4 flex justify-center gap-2">
-                                    <button onClick={() => handleEditClick(user)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs">Edit</button>
-                                    {user.role !== 'super_admin' && (
-                                        <button onClick={() => handleDelete(user.id)} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs">Hapus</button>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                {loading && <p className="text-center p-4 animate-pulse">Memuat data...</p>}
-            </div>
         </div>
+
+        {/* LOADING STATE */}
+        {loading && <div className="text-center py-20 animate-pulse text-slate-500 font-mono">Memuat data users...</div>}
+
+        {/* --- GROUP 1: SUPER ADMIN --- */}
+        {!loading && groupSuperAdmin.length > 0 && (
+            <div className="mb-10 animate-in fade-in slide-in-from-bottom duration-500">
+                <h3 className="text-purple-400 font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span> Root Access ({groupSuperAdmin.length})
+                </h3>
+                <div className="space-y-3">
+                    {groupSuperAdmin.map(u => (
+                        <UserCard key={u.id} user={u} icon="👑" colorClass="purple" badgeColor="bg-purple-500/20 text-purple-300" />
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {/* --- GROUP 2: BOSS / DIREKSI --- */}
+        {!loading && groupBoss.length > 0 && (
+            <div className="mb-10 animate-in fade-in slide-in-from-bottom duration-700">
+                <h3 className="text-yellow-500 font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span> Management / Boss ({groupBoss.length})
+                </h3>
+                <div className="space-y-3">
+                    {groupBoss.map(u => (
+                        <UserCard key={u.id} user={u} icon="💼" colorClass="yellow" badgeColor="bg-yellow-500/20 text-yellow-300" />
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {/* --- GROUP 3: STAFF ADMIN --- */}
+        {!loading && groupAdmin.length > 0 && (
+            <div className="mb-10 animate-in fade-in slide-in-from-bottom duration-1000">
+                <h3 className="text-blue-500 font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span> Staff Admin ({groupAdmin.length})
+                </h3>
+                <div className="space-y-3">
+                    {groupAdmin.map(u => (
+                        <UserCard key={u.id} user={u} icon="🧑‍💻" colorClass="blue" badgeColor="bg-blue-500/20 text-blue-300" />
+                    ))}
+                </div>
+            </div>
+        )}
 
         {/* MODAL EDIT / TAMBAH */}
         {showModal && (
-            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-                <div className="bg-slate-800 w-full max-w-md p-8 rounded-3xl border border-slate-600 shadow-2xl">
-                    <h3 className="text-2xl font-black text-white mb-6 uppercase">{isEditing ? "Edit Akun" : "Tambah Akun Baru"}</h3>
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-in zoom-in-95 duration-200">
+                <div className="bg-slate-900 w-full max-w-md p-8 rounded-[2rem] border border-slate-700 shadow-2xl relative overflow-hidden">
+                    {/* Hiasan Glow */}
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+
+                    <h3 className="text-2xl font-black text-white mb-1 uppercase tracking-tight">{isEditing ? "Edit Access" : "Create Access"}</h3>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-8">Management User System</p>
                     
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                         <div>
-                            <label className="text-xs font-bold text-slate-400 uppercase ml-1">Username</label>
-                            <input type="text" className="w-full p-4 bg-slate-900 border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500" 
-                                value={formUser.username} onChange={(e) => setFormUser({...formUser, username: e.target.value})} />
+                            <label className="text-[10px] font-black text-blue-500 uppercase ml-1 mb-1 block">Username Login</label>
+                            <input type="text" className="w-full p-4 bg-slate-950 border border-slate-700 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500 transition focus:ring-1 focus:ring-blue-500" 
+                                value={formUser.username} onChange={(e) => setFormUser({...formUser, username: e.target.value})} placeholder="Ex: KRISTYAMIN" />
                         </div>
                         <div>
-                            <label className="text-xs font-bold text-slate-400 uppercase ml-1">Password</label>
-                            <input type="text" className="w-full p-4 bg-slate-900 border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500" 
-                                value={formUser.password} onChange={(e) => setFormUser({...formUser, password: e.target.value})} />
+                            <label className="text-[10px] font-black text-blue-500 uppercase ml-1 mb-1 block">Password Access</label>
+                            <input type="text" className="w-full p-4 bg-slate-950 border border-slate-700 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500 transition focus:ring-1 focus:ring-blue-500" 
+                                value={formUser.password} onChange={(e) => setFormUser({...formUser, password: e.target.value})} placeholder="Ex: RAHASIA123" />
                         </div>
                         <div>
-                            <label className="text-xs font-bold text-slate-400 uppercase ml-1">Role / Jabatan</label>
-                            <select className="w-full p-4 bg-slate-900 border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500"
-                                value={formUser.role} onChange={(e) => setFormUser({...formUser, role: e.target.value})}>
-                                <option value="admin">Admin Staff</option>
-                                <option value="boss">Boss / Direksi</option>
-                                <option value="super_admin">Super Admin</option>
-                            </select>
+                            <label className="text-[10px] font-black text-blue-500 uppercase ml-1 mb-1 block">Role / Jabatan</label>
+                            <div className="relative">
+                                <select className="w-full p-4 bg-slate-950 border border-slate-700 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                                    value={formUser.role} onChange={(e) => setFormUser({...formUser, role: e.target.value})}>
+                                    <option value="admin">🔵 ADMIN STAFF</option>
+                                    <option value="boss">🟡 BOSS / DIREKSI</option>
+                                    <option value="super_admin">🟣 SUPER ADMIN</option>
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">▼</div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex gap-3 mt-8">
-                        <button onClick={() => setShowModal(false)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold transition">Batal</button>
-                        <button onClick={handleSave} className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-black transition shadow-lg shadow-blue-900/20">SIMPAN</button>
+                    <div className="flex gap-3 mt-10">
+                        <button onClick={() => setShowModal(false)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-4 rounded-xl font-bold transition text-xs uppercase tracking-wider">Cancel</button>
+                        <button onClick={handleSave} className="flex-[2] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-4 rounded-xl font-black transition shadow-lg shadow-purple-900/20 text-xs uppercase tracking-wider">
+                            {isEditing ? "Save Changes" : "Create User"}
+                        </button>
                     </div>
                 </div>
             </div>

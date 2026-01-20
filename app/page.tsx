@@ -44,7 +44,7 @@ export default function Home() {
     setLoading(false);
   };
 
-  // --- 2. LOGIKA LOGIN ---
+  // --- 2. LOGIKA LOGIN (UPDATE SUPER ADMIN) ---
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -61,10 +61,14 @@ export default function Home() {
         alert("❌ Login Gagal! Username atau Password salah.");
       } else {
         sessionStorage.setItem("user_role", data.role);
+        
+        // --- LOGIKA PENGARAHAN RUANGAN ---
         if (data.role === "admin") {
           router.push("/admin");
         } else if (data.role === "boss") {
           router.push("/dashboard-bos"); 
+        } else if (data.role === "super_admin") {
+          router.push("/super-admin"); // <--- TAMBAHAN KHUSUS SUPER ADMIN
         } else {
           alert("Akun tidak memiliki akses.");
         }
