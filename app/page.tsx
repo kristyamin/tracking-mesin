@@ -111,7 +111,7 @@ export default function Home() {
             </form>
             
             {errorMsg && <div className="mt-6 p-4 bg-red-50 rounded-2xl text-red-500 text-xs font-bold text-center border border-red-100 animate-pulse">{errorMsg}</div>}
-            <div className="mt-10 border-t border-gray-50 pt-6"><p className="text-center text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.0</p></div>
+            <div className="mt-10 border-t border-gray-50 pt-6"><p className="text-center text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.4</p></div>
             <div className="mt-0 border-t border-gray-50 pt-1"><p className="text-center text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">www.djitoemesindo.com</p></div>
           </div>
         ) : (
