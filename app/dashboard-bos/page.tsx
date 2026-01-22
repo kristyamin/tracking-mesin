@@ -60,37 +60,66 @@ export default function DashboardBos() {
 
   useEffect(() => { fetchOrders(); }, []);
 
-  // === 5. LOGIC FILTER UTAMA (UPDATE: LOGIC "SELESAI") ===
+  // === FUNGSI RESET / REFRESH TOTAL ===
+  const handleRefresh = () => {
+      setSearchTerm("");
+      setSelectedYear(currentYearReal.toString());
+      setSelectedType(null);
+      fetchOrders();
+  };
+
+  // === 5. LOGIC FILTER UTAMA ===
   const filteredData = orders.filter((item) => {
-    // A. Filter Tahun
     const date = new Date(item.created_at);
     const isYearMatch = date.getFullYear().toString() === selectedYear;
 
-    // B. Filter Search
     const term = searchTerm.toLowerCase();
-    
-    // Logic Biasa (Cari Nama/ID)
     const isTextMatch = (
         item.order_id.toLowerCase().includes(term) ||
         item.customer_name.toLowerCase().includes(term) ||
         (item.mechanic_name && item.mechanic_name.toLowerCase().includes(term))
     );
 
-    // Logic Spesial: Jika ketik "selesai", cari yang statusnya 100% ke atas
     let isStatusDone = false;
     if (term === 'selesai') {
-        // Cek jika angka status >= 100
-        if (parseInt(item.status) >= 100) {
-            isStatusDone = true;
-        }
+        if (parseInt(item.status) >= 100) isStatusDone = true;
     }
 
-    // Gabungkan (Tahun HARUS cocok) DAN (Text cocok ATAU Status Selesai cocok)
     return isYearMatch && (isTextMatch || isStatusDone);
   });
 
-  // Filter khusus untuk List View
   const filteredListByType = filteredData.filter((item) => item.machine_type === selectedType);
+
+  // === 6. LOGIC GROUPING ===
+  const groupedOrders: { [key: string]: any[] } = {};
+  
+  filteredListByType.forEach(item => {
+     if (!groupedOrders[item.order_id]) {
+         groupedOrders[item.order_id] = [];
+     }
+     groupedOrders[item.order_id].push(item);
+  });
+
+  // === 7. LOGIC SORTING GROUP (PERBAIKAN UTAMA DI SINI) ===
+  // Kita urutkan KUNCI GROUP (Order ID) berdasarkan status isinya
+  const sortedGroupKeys = Object.keys(groupedOrders).sort((a, b) => {
+      const itemsA = groupedOrders[a];
+      const itemsB = groupedOrders[b];
+
+      // Cek apakah Order A isinya SUDAH 100% SEMUA?
+      const isAllDoneA = itemsA.every((item) => (parseInt(item.status) || 0) >= 100);
+      // Cek apakah Order B isinya SUDAH 100% SEMUA?
+      const isAllDoneB = itemsB.every((item) => (parseInt(item.status) || 0) >= 100);
+
+      // PRIORITAS 1: Yang BELUM selesai (Active) ditaruh di ATAS
+      if (!isAllDoneA && isAllDoneB) return -1; // A naik (karena masih aktif)
+      if (isAllDoneA && !isAllDoneB) return 1;  // B naik (karena masih aktif)
+
+      // PRIORITAS 2: Jika statusnya sama (sama-sama aktif atau sama-sama selesai), urutkan Tanggal Terbaru
+      const dateA = new Date(itemsA[0].created_at).getTime();
+      const dateB = new Date(itemsB[0].created_at).getTime();
+      return dateB - dateA; // Newest First
+  });
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 relative">
@@ -98,7 +127,6 @@ export default function DashboardBos() {
         
         {/* === HEADER & FILTER === */}
         <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 mb-6">
-          
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
             <div className="text-center md:text-left">
               <h1 className="text-xl md:text-2xl font-black uppercase tracking-tight">Monitoring Produksi</h1>
@@ -106,7 +134,9 @@ export default function DashboardBos() {
             </div>
             
             <div className="flex gap-2">
-               <button onClick={fetchOrders} className="bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-bold text-xs uppercase hover:bg-blue-100 transition-colors">Refresh</button>
+               <button onClick={handleRefresh} className="bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-bold text-xs uppercase hover:bg-blue-100 transition-colors">
+                   🔄 Refresh
+               </button>
                {selectedType ? (
                    <button onClick={() => setSelectedType(null)} className="bg-slate-100 text-slate-600 px-4 py-2 rounded-full font-bold text-xs uppercase hover:bg-slate-200 transition-colors">← Kembali</button>
                ) : (
@@ -178,56 +208,91 @@ export default function DashboardBos() {
             </div>
         )}
 
-        {/* === VIEW 2: LIST ORDER (UPDATE: SWAP POSISI NAMA & ID) === */}
+        {/* === VIEW 2: LIST ORDER (GROUPING + SORTING SUPER SMART) === */}
         {selectedType && (
-             <div className="space-y-4 animate-in slide-in-from-right duration-300">
+             <div className="space-y-6 animate-in slide-in-from-right duration-300">
                 <div className="flex items-center gap-2 mb-2">
                     <span className="bg-slate-800 text-white px-3 py-1 rounded-lg text-xs font-bold uppercase">{selectedType}</span>
                     <span className="text-slate-400 text-xs font-bold">List Order Tahun {selectedYear}</span>
                 </div>
 
-                {filteredListByType.length === 0 ? (
+                {sortedGroupKeys.length === 0 ? (
                     <div className="text-center p-20 text-slate-400 font-bold border-2 border-dashed rounded-[2rem] bg-white">
                         📂 Tidak ada data ditemukan.
                     </div>
                 ) : (
-                    filteredListByType.map((item) => (
-                      <div key={item.id} onClick={() => setActiveOrder(item)} 
-                        className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 hover:border-blue-300 transition-all cursor-pointer flex flex-col md:grid md:grid-cols-4 items-center gap-2 group">
+                    sortedGroupKeys.map((orderId) => {
+                        const itemsRaw = groupedOrders[orderId];
                         
-                        {/* TANGGAL */}
-                        <div className="text-xs font-mono font-bold text-slate-500">{new Date(item.created_at).toLocaleDateString("id-ID", { day: '2-digit', month: 'short' })}</div>
-                        
-                        {/* --- BAGIAN INI YANG DITUKAR --- */}
-                        <div className="flex flex-col text-center md:text-left">
-                            {/* NAMA CUSTOMER (BESAR) */}
-                            <div className="font-black text-slate-800 uppercase tracking-tight text-lg leading-none">
-                                {item.customer_name}
-                            </div>
-                            {/* ID ORDER (KECIL) */}
-                            <div className="font-bold text-blue-600 text-xs mt-1">
-                                ID: {item.order_id}
-                            </div>
-                        </div>
-                        {/* ------------------------------- */}
+                        // Sorting INTERNAL (Per Mesin di dalam Kartu)
+                        const itemsSorted = itemsRaw.sort((a: any, b: any) => {
+                            const statA = parseInt(a.status) || 0;
+                            const statB = parseInt(b.status) || 0;
+                            if (statA < 100 && statB >= 100) return -1;
+                            if (statA >= 100 && statB < 100) return 1;
+                            return 0;
+                        });
 
-                        <div className="font-bold text-slate-500 text-xs uppercase">{item.machine_name || item.machine_type}</div>
+                        const firstItem = itemsSorted[0];
+                        // Cek apakah SATU GROUP ini sudah selesai semua?
+                        const isGroupFullDone = itemsSorted.every((i: any) => (parseInt(i.status) || 0) >= 100);
                         
-                        {/* STATUS */}
-                        <div className="w-full md:w-auto flex md:justify-end">
-                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase ${parseInt(item.status) >= 100 ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-600'}`}>
-                                {item.status}%
-                            </span>
-                        </div>
-                      </div>
-                    ))
+                        return (
+                            <div key={orderId} className={`bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden transition-all
+                                ${isGroupFullDone ? 'opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0' : ''}`}>
+                                
+                                {/* HEADER GROUP */}
+                                <div className="bg-slate-50 p-4 border-b border-slate-100 flex justify-between items-center">
+                                    <div>
+                                        <h3 className="font-black text-slate-800 uppercase text-lg leading-none">{firstItem.customer_name}</h3>
+                                        <p className="text-blue-600 font-bold text-xs mt-1">ID: {orderId}</p>
+                                    </div>
+                                    <div className="text-xs font-bold text-slate-400 bg-white px-3 py-1 rounded-lg border">
+                                        {new Date(firstItem.created_at).toLocaleDateString("id-ID", { day: '2-digit', month: 'short' })}
+                                    </div>
+                                </div>
+
+                                {/* LIST MESIN */}
+                                <div className="p-2">
+                                    {itemsSorted.map((item: any, index: number) => {
+                                        const isDone = parseInt(item.status) >= 100;
+                                        return (
+                                            <div key={item.id} onClick={() => setActiveOrder(item)} 
+                                                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-colors group mb-1 last:mb-0 border border-transparent 
+                                                ${isDone ? 'bg-slate-50/50 hover:bg-slate-100' : 'hover:bg-blue-50 hover:border-blue-100'}`}>
+                                                
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black 
+                                                        ${isDone ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
+                                                        {isDone ? '✓' : index + 1}
+                                                    </div>
+                                                    <div>
+                                                        <p className={`text-xs font-black uppercase ${isDone ? 'text-slate-400' : 'text-slate-700'}`}>
+                                                            {item.machine_name || item.machine_type}
+                                                        </p>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">Mekanik: {item.mechanic_name || "-"}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="text-right">
+                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${isDone ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-600'}`}>
+                                                        {item.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })
                 )}
              </div>
         )}
 
       </div>
 
-      {/* === MODAL DETAIL (KHUSUS BOSS) === */}
+      {/* === MODAL DETAIL === */}
       {activeOrder && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col animate-in slide-in-from-bottom duration-300">
           <div className="p-4 flex justify-between items-center border-b sticky top-0 bg-white z-10 shadow-sm">
@@ -253,7 +318,7 @@ export default function DashboardBos() {
 
             {/* DETAIL TEKNIS */}
             <div className="p-6 max-w-3xl mx-auto -mt-6 relative z-10">
-               <div className="bg-white p-6 rounded-[2rem] shadow-lg mb-8 grid grid-cols-2 gap-6">
+               <div className="bg-white p-6 rounded-[2rem] shadow-lg mb-6 grid grid-cols-2 gap-6">
                   <div>
                     <label className="text-[10px] font-black text-slate-400 uppercase">Mekanik</label>
                     <p className="font-bold text-slate-800">{activeOrder.mechanic_name || "-"}</p>
@@ -268,6 +333,16 @@ export default function DashboardBos() {
                   </div>
                </div>
 
+               {/* SPESIFIKASI MESIN */}
+               <div className="bg-blue-50 p-6 rounded-[2rem] border border-blue-100 shadow-sm mb-6">
+                   <h3 className="font-black text-blue-600 uppercase text-sm mb-2 flex items-center gap-2">
+                       ⚙️ Spesifikasi Mesin
+                   </h3>
+                   <p className="text-slate-700 text-sm font-medium leading-relaxed whitespace-pre-wrap">
+                       {activeOrder.spesifikasi || "Belum ada data spesifikasi."}
+                   </p>
+               </div>
+
                {/* LAPORAN INTERNAL */}
                <div className="space-y-6">
                   <h3 className="font-black text-slate-800 uppercase text-sm pl-2 border-l-4 border-yellow-500">Laporan Internal</h3>
@@ -280,7 +355,7 @@ export default function DashboardBos() {
                                     Last Update: {new Date(activeOrder.created_at).toLocaleDateString("id-ID")}
                                 </span>
                                 <span className="bg-white text-yellow-800 px-3 py-1 rounded-lg text-[10px] font-black border border-yellow-200">
-                                    {activeOrder.status}%
+                                    {activeOrder.status}
                                 </span>
                             </div>
                             {activeOrder.internal_report ? (
