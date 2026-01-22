@@ -21,7 +21,7 @@ export default function Home() {
   const [creds, setCreds] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
 
-  // --- 1. LOGIKA SEARCH (SUDAH SUPPORT GROUPING) ---
+  // --- 1. LOGIKA SEARCH (SUPPORT GROUPING) ---
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idSearch) return;
@@ -31,7 +31,7 @@ export default function Home() {
     setSearchResults([]);
     setSelectedMachine(null);
 
-    // HAPUS .single(), GANTI JADI .select("*") BIAR BISA NANGKAP BANYAK
+    // Cari ID (Bisa dapat banyak mesin)
     const { data, error } = await supabase
       .from("orders")
       .select("*")
@@ -51,7 +51,7 @@ export default function Home() {
               progress_number: parseInt(item.public_status) || 0
           });
       }
-      // Jika banyak mesin, biarkan selectedMachine null (nanti muncul pilihan)
+      // Jika banyak mesin, biarkan selectedMachine null (nanti muncul list pilihan)
     }
     setLoading(false);
   };
@@ -94,6 +94,13 @@ export default function Home() {
       if (error || !data) {
         alert("❌ Login Gagal! Username atau Password salah.");
       } else {
+        // Log Activity
+        const newCount = (data.login_count || 0) + 1;
+        await supabase.from("users").update({
+            login_count: newCount,
+            last_seen: new Date().toISOString()
+        }).eq("id", data.id);
+
         sessionStorage.setItem("user_role", data.role);
         if (data.role === "admin") {
           router.push("/admin");
@@ -141,20 +148,20 @@ export default function Home() {
             </form>
             
             {errorMsg && <div className="mt-6 p-4 bg-red-50 rounded-2xl text-red-500 text-xs font-bold text-center border border-red-100 animate-pulse">{errorMsg}</div>}
-            <div className="mt-10 border-t border-gray-50 pt-6"><p className="text-center text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.0</p></div>
+            <div className="mt-10 border-t border-gray-50 pt-6"><p className="text-center text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.2</p></div>
             <div className="mt-0 border-t border-gray-50 pt-1"><p className="text-center text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">www.djitoemesindo.com</p></div>
           </div>
         )}
 
-        {/* === TAMPILAN 2: PILIH MESIN (JIKA ADA BANYAK MESIN DALAM 1 ORDER) === */}
+        {/* === TAMPILAN 2: PILIH MESIN (JIKA > 1 MESIN) === */}
         {(searchResults.length > 1 && !selectedMachine) && (
             <div className="animate-in fade-in slide-in-from-bottom duration-500">
                 <button onClick={() => { setSearchResults([]); setIdSearch(""); }} className="mb-6 bg-white px-4 py-2 rounded-full shadow-sm text-slate-400 text-xs font-bold hover:text-blue-600 hover:shadow-md flex items-center gap-2 transition-all w-fit mx-auto">← CHECK ANOTHER ID</button>
                 
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-6 border border-white relative">
                     <div className="text-center mb-6">
-                        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">PILIH MESIN</h2>
-                        <p className="text-gray-400 text-xs font-bold">Ditemukan {searchResults.length} mesin untuk ID ini</p>
+                        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">CHOOSE YOUR MACHINE</h2>
+                        <p className="text-gray-400 text-xs font-bold">{searchResults.length} Machines identified for this ID</p>
                     </div>
 
                     <div className="space-y-3">
@@ -176,11 +183,11 @@ export default function Home() {
             </div>
         )}
 
-        {/* === TAMPILAN 3: DETAIL TIMELINE (JIKA SUDAH PILIH MESIN) === */}
+        {/* === TAMPILAN 3: DETAIL TIMELINE === */}
         {selectedMachine && (
           <div className="animate-in fade-in slide-in-from-bottom duration-500">
             <button onClick={handleBack} className="mb-6 bg-white px-4 py-2 rounded-full shadow-sm text-slate-400 text-xs font-bold hover:text-blue-600 hover:shadow-md flex items-center gap-2 transition-all w-fit mx-auto">
-                ← {searchResults.length > 1 ? "PILIH MESIN LAIN" : "CHECK ANOTHER ID"}
+                ← {searchResults.length > 1 ? "CHOOSE ANOTHER MACHINE" : "CHECK ANOTHER ID"}
             </button>
             
             <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-6 border border-white relative">
@@ -197,16 +204,18 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Deskripsi Update */}
-              {selectedMachine.deskripsi_progress && (
-                <div className="mb-8 bg-blue-600 p-5 rounded-3xl shadow-lg shadow-blue-200 text-white animate-pulse-once">
-                  <p className="text-[10px] font-bold text-blue-200 uppercase mb-1">📢 LATEST UPDATE:</p>
-                  <p className="font-bold leading-relaxed text-sm">"{selectedMachine.deskripsi_progress}"</p>
-                  <p className="text-[9px] text-blue-300 mt-2 text-right uppercase tracking-wider">
-                      {new Date(selectedMachine.created_at).toLocaleDateString('id-ID')}
+              {/* === [UPDATED] SPESIFIKASI MESIN (MENGGANTIKAN LATEST UPDATE) === */}
+              {selectedMachine.spesifikasi && (
+                <div className="mb-8 bg-blue-50 p-5 rounded-3xl border border-blue-100 shadow-sm text-slate-800">
+                  <p className="text-[10px] font-black text-blue-600 uppercase mb-2 flex items-center gap-2">
+                     ⚙️ Product Specifications
+                  </p>
+                  <p className="font-bold leading-relaxed text-sm whitespace-pre-wrap">
+                     {selectedMachine.spesifikasi}
                   </p>
                 </div>
               )}
+              {/* ============================================================= */}
 
               {/* TIMELINE PROGRESS */}
               <div className="space-y-0 relative pl-2">
@@ -283,7 +292,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* MODAL FOTO (Menampilkan public_foto_url) */}
+      {/* MODAL FOTO */}
       {selectedDetail && selectedMachine && (
         <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-5 z-50 backdrop-blur-md animate-in fade-in">
           <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl relative border border-white/50">
@@ -295,7 +304,10 @@ export default function Home() {
               <h3 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">search results</h3>
               <div className="h-1 w-12 bg-blue-500 rounded-full mb-4"></div>
               <p className="text-gray-500 text-sm mb-4 leading-relaxed font-medium">Status Progress: <strong className="text-slate-900">{selectedMachine.public_status}</strong>.</p>
+              
+              {/* DESKRIPSI PROGRESS (Di sini tetap bisa muncul kalau mau, di Modal) */}
               {selectedMachine.deskripsi_progress && (<div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 text-sm"><p className="text-xs font-bold text-blue-600 uppercase mb-1">NOTE:</p><p className="text-slate-700">{selectedMachine.deskripsi_progress}</p></div>)}
+              
               <button onClick={() => setSelectedDetail(null)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all">Close</button>
             </div>
           </div>
@@ -313,12 +325,8 @@ export default function Home() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div><input type="text" placeholder="USERNAME" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-slate-900 font-black outline-none focus:border-blue-500 text-center uppercase tracking-wider text-sm transition-all placeholder-gray-300" value={creds.username} onChange={(e) => setCreds({ ...creds, username: e.target.value.toUpperCase() })} /></div>
               <div className="relative">
-                  <input type={showPassword ? "text" : "password"} placeholder="••••" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-slate-900 font-black outline-none focus:border-blue-500 text-center tracking-widest text-base transition-all placeholder-gray-300 pr-12" 
-                    value={creds.password} onChange={(e) => setCreds({ ...creds, password: e.target.value })} />
-                  <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl grayscale opacity-50 hover:opacity-100 active:scale-95 transition-all"
-                    onMouseDown={() => setShowPassword(true)} onMouseUp={() => setShowPassword(false)} onMouseLeave={() => setShowPassword(false)} onTouchStart={() => setShowPassword(true)} onTouchEnd={() => setShowPassword(false)}>
-                    {showPassword ? "👀" : "👁️"}
-                  </button>
+                  <input type={showPassword ? "text" : "password"} placeholder="••••" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-slate-900 font-black outline-none focus:border-blue-500 text-center tracking-widest text-base transition-all placeholder-gray-300 pr-12" value={creds.password} onChange={(e) => setCreds({ ...creds, password: e.target.value })} />
+                  <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl grayscale opacity-50 hover:opacity-100 active:scale-95 transition-all" onMouseDown={() => setShowPassword(true)} onMouseUp={() => setShowPassword(false)} onMouseLeave={() => setShowPassword(false)} onTouchStart={() => setShowPassword(true)} onTouchEnd={() => setShowPassword(false)}>{showPassword ? "👀" : "👁️"}</button>
               </div>
               <button className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black mt-2 hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all text-sm">MASUK</button>
             </form>

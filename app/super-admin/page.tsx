@@ -26,14 +26,14 @@ export default function SuperAdminPage() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    // Ambil semua user, urutkan berdasarkan ID biar rapi saat ditambah
-    const { data, error } = await supabase.from("users").select("*").order("id", { ascending: true });
+    // Ambil data dan urutkan berdasarkan yang terakhir login (paling aktif di atas)
+    const { data, error } = await supabase.from("users").select("*").order("last_seen", { ascending: false });
     if (error) alert("Gagal ambil data user");
     else setUsers(data || []);
     setLoading(false);
   };
 
-  // 2. FUNGSI CRUD (LOGIKA DARI KODE BAPAK)
+  // 2. FUNGSI CRUD
   const handleDelete = async (id: number) => {
     if(!confirm("⚠️ Yakin hapus user ini selamanya?")) return;
     const { error } = await supabase.from("users").delete().eq("id", id);
@@ -58,7 +58,6 @@ export default function SuperAdminPage() {
 
     try {
         if(isEditing) {
-            // Update
             const { error } = await supabase.from("users").update({
                 username: formUser.username,
                 password: formUser.password,
@@ -66,11 +65,11 @@ export default function SuperAdminPage() {
             }).eq("id", formUser.id);
             if(error) throw error;
         } else {
-            // Insert Baru
             const { error } = await supabase.from("users").insert({
                 username: formUser.username,
                 password: formUser.password,
-                role: formUser.role
+                role: formUser.role,
+                login_count: 0
             });
             if(error) throw error;
         }
@@ -82,15 +81,31 @@ export default function SuperAdminPage() {
     }
   };
 
-  // 3. LOGIKA GROUPING (MEMISAHKAN BARISAN)
+  // FUNGSI CEK STATUS ONLINE (Batas 30 Menit)
+  const getOnlineStatus = (lastSeen: string | null) => {
+      if (!lastSeen) return <span className="text-slate-500 text-[10px]">Belum pernah login</span>;
+      
+      const last = new Date(lastSeen).getTime();
+      const now = new Date().getTime();
+      const diffMinutes = (now - last) / (1000 * 60);
+
+      if (diffMinutes <= 30) {
+          return <span className="text-green-400 font-bold text-[10px] animate-pulse">● ONLINE</span>;
+      } else if (diffMinutes <= 60) {
+          return <span className="text-yellow-400 font-bold text-[10px]">● {Math.floor(diffMinutes)}m ago</span>;
+      } else {
+          return <span className="text-slate-500 text-[10px]">{new Date(lastSeen).toLocaleDateString("id-ID")} {new Date(lastSeen).toLocaleTimeString("id-ID").slice(0,5)}</span>;
+      }
+  };
+
+  // Grouping Logic
   const groupSuperAdmin = users.filter(u => u.role === 'super_admin');
   const groupBoss = users.filter(u => u.role === 'boss');
   const groupAdmin = users.filter(u => u.role === 'admin');
 
-  // Komponen Kartu User (Biar kodingan rapi)
+  // Komponen Kartu User
   const UserCard = ({ user, icon, colorClass, badgeColor }: any) => (
     <div className={`bg-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 border border-slate-700 hover:border-${colorClass}-500 transition group shadow-lg relative overflow-hidden`}>
-        {/* Hiasan Background */}
         <div className={`absolute top-0 left-0 w-1 h-full bg-${colorClass}-500`}></div>
         
         <div className="flex items-center gap-5 w-full md:w-auto">
@@ -98,13 +113,16 @@ export default function SuperAdminPage() {
                 {icon}
             </div>
             <div>
-                <p className="font-black text-xl text-white tracking-wide">{user.username}</p>
+                <div className="flex items-center gap-2">
+                    <p className="font-black text-xl text-white tracking-wide">{user.username}</p>
+                    {getOnlineStatus(user.last_seen)}
+                </div>
                 <div className="flex gap-2 mt-1">
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${badgeColor}`}>
                         {user.role}
                     </span>
-                    <span className="text-[10px] text-slate-500 font-mono bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
-                        ID: {user.id}
+                    <span className="text-[10px] text-slate-400 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+                        Logins: {user.login_count || 0}x
                     </span>
                 </div>
             </div>
@@ -120,7 +138,6 @@ export default function SuperAdminPage() {
             <button onClick={() => handleEditClick(user)} className="bg-slate-700 hover:bg-blue-600 text-white p-3 rounded-xl transition shadow-md">
                 ✏️
             </button>
-            {/* Tombol Hapus (Disembunyikan kalau Super Admin menghapus dirinya sendiri bisa bahaya, tapi logic bapak membolehkan) */}
             <button onClick={() => handleDelete(user.id)} className="bg-slate-700 hover:bg-red-600 text-white p-3 rounded-xl transition shadow-md">
                 🗑️
             </button>
@@ -160,9 +177,7 @@ export default function SuperAdminPage() {
                     <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span> Root Access ({groupSuperAdmin.length})
                 </h3>
                 <div className="space-y-3">
-                    {groupSuperAdmin.map(u => (
-                        <UserCard key={u.id} user={u} icon="👑" colorClass="purple" badgeColor="bg-purple-500/20 text-purple-300" />
-                    ))}
+                    {groupSuperAdmin.map(u => <UserCard key={u.id} user={u} icon="👑" colorClass="purple" badgeColor="bg-purple-500/20 text-purple-300" />)}
                 </div>
             </div>
         )}
@@ -174,9 +189,7 @@ export default function SuperAdminPage() {
                     <span className="w-2 h-2 rounded-full bg-yellow-500"></span> Management / Boss ({groupBoss.length})
                 </h3>
                 <div className="space-y-3">
-                    {groupBoss.map(u => (
-                        <UserCard key={u.id} user={u} icon="💼" colorClass="yellow" badgeColor="bg-yellow-500/20 text-yellow-300" />
-                    ))}
+                    {groupBoss.map(u => <UserCard key={u.id} user={u} icon="💼" colorClass="yellow" badgeColor="bg-yellow-500/20 text-yellow-300" />)}
                 </div>
             </div>
         )}
@@ -188,9 +201,7 @@ export default function SuperAdminPage() {
                     <span className="w-2 h-2 rounded-full bg-blue-500"></span> Staff Admin ({groupAdmin.length})
                 </h3>
                 <div className="space-y-3">
-                    {groupAdmin.map(u => (
-                        <UserCard key={u.id} user={u} icon="🧑‍💻" colorClass="blue" badgeColor="bg-blue-500/20 text-blue-300" />
-                    ))}
+                    {groupAdmin.map(u => <UserCard key={u.id} user={u} icon="🧑‍💻" colorClass="blue" badgeColor="bg-blue-500/20 text-blue-300" />)}
                 </div>
             </div>
         )}
@@ -199,9 +210,7 @@ export default function SuperAdminPage() {
         {showModal && (
             <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-in zoom-in-95 duration-200">
                 <div className="bg-slate-900 w-full max-w-md p-8 rounded-[2rem] border border-slate-700 shadow-2xl relative overflow-hidden">
-                    {/* Hiasan Glow */}
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
-
                     <h3 className="text-2xl font-black text-white mb-1 uppercase tracking-tight">{isEditing ? "Edit Access" : "Create Access"}</h3>
                     <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-8">Management User System</p>
                     
