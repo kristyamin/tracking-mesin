@@ -26,7 +26,7 @@ export default function SuperAdminPage() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    // Ambil data dan urutkan berdasarkan yang terakhir login (paling aktif di atas)
+    // Ambil semua data user
     const { data, error } = await supabase.from("users").select("*").order("last_seen", { ascending: false });
     if (error) alert("Gagal ambil data user");
     else setUsers(data || []);
@@ -81,10 +81,9 @@ export default function SuperAdminPage() {
     }
   };
 
-  // FUNGSI CEK STATUS ONLINE (Batas 30 Menit)
+  // FUNGSI CEK STATUS ONLINE
   const getOnlineStatus = (lastSeen: string | null) => {
       if (!lastSeen) return <span className="text-slate-500 text-[10px]">Belum pernah login</span>;
-      
       const last = new Date(lastSeen).getTime();
       const now = new Date().getTime();
       const diffMinutes = (now - last) / (1000 * 60);
@@ -98,28 +97,30 @@ export default function SuperAdminPage() {
       }
   };
 
-  // Grouping Logic
+  // --- GROUPING LOGIC (UPDATE: TAMBAH MESS/HRD) ---
   const groupSuperAdmin = users.filter(u => u.role === 'super_admin');
   const groupBoss = users.filter(u => u.role === 'boss');
   const groupAdmin = users.filter(u => u.role === 'admin');
+  // Logic Baru: Gabungkan HRD (mess_admin) dan Viewer (mess_viewer) dalam satu grup
+  const groupInventaris = users.filter(u => u.role === 'mess_admin' || u.role === 'mess_viewer');
 
   // Komponen Kartu User
-  const UserCard = ({ user, icon, colorClass, badgeColor }: any) => (
+  const UserCard = ({ user, icon, colorClass, badgeColor, roleLabel }: any) => (
     <div className={`bg-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 border border-slate-700 hover:border-${colorClass}-500 transition group shadow-lg relative overflow-hidden`}>
         <div className={`absolute top-0 left-0 w-1 h-full bg-${colorClass}-500`}></div>
         
         <div className="flex items-center gap-5 w-full md:w-auto">
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold bg-slate-900 shadow-inner ${colorClass === 'purple' ? 'text-purple-400' : (colorClass === 'yellow' ? 'text-yellow-400' : 'text-blue-400')}`}>
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold bg-slate-900 shadow-inner ${colorClass === 'purple' ? 'text-purple-400' : (colorClass === 'yellow' ? 'text-yellow-400' : (colorClass === 'green' ? 'text-green-400' : 'text-blue-400'))}`}>
                 {icon}
             </div>
             <div>
                 <div className="flex items-center gap-2">
-                    <p className="font-black text-xl text-white tracking-wide">{user.username}</p>
+                    <p className="font-black text-xl text-white tracking-wide uppercase">{user.username}</p>
                     {getOnlineStatus(user.last_seen)}
                 </div>
                 <div className="flex gap-2 mt-1">
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${badgeColor}`}>
-                        {user.role}
+                        {roleLabel || user.role}
                     </span>
                     <span className="text-[10px] text-slate-400 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
                         Logins: {user.login_count || 0}x
@@ -167,7 +168,6 @@ export default function SuperAdminPage() {
             </div>
         </div>
 
-        {/* LOADING STATE */}
         {loading && <div className="text-center py-20 animate-pulse text-slate-500 font-mono">Memuat data users...</div>}
 
         {/* --- GROUP 1: SUPER ADMIN --- */}
@@ -194,14 +194,35 @@ export default function SuperAdminPage() {
             </div>
         )}
 
-        {/* --- GROUP 3: STAFF ADMIN --- */}
+        {/* --- GROUP 3: STAFF ADMIN MESIN --- */}
         {!loading && groupAdmin.length > 0 && (
             <div className="mb-10 animate-in fade-in slide-in-from-bottom duration-1000">
                 <h3 className="text-blue-500 font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500"></span> Staff Admin ({groupAdmin.length})
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span> Staff Admin Mesin ({groupAdmin.length})
                 </h3>
                 <div className="space-y-3">
                     {groupAdmin.map(u => <UserCard key={u.id} user={u} icon="🧑‍💻" colorClass="blue" badgeColor="bg-blue-500/20 text-blue-300" />)}
+                </div>
+            </div>
+        )}
+
+        {/* --- GROUP 4: INVENTARIS / HRD (BARU) --- */}
+        {!loading && groupInventaris.length > 0 && (
+            <div className="mb-10 animate-in fade-in slide-in-from-bottom duration-1000">
+                <h3 className="text-green-500 font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span> Inventaris & HRD ({groupInventaris.length})
+                </h3>
+                <div className="space-y-3">
+                    {groupInventaris.map(u => (
+                        <UserCard 
+                            key={u.id} 
+                            user={u} 
+                            icon={u.role === 'mess_admin' ? "🏡" : "👀"} 
+                            colorClass="green" 
+                            badgeColor="bg-green-500/20 text-green-300" 
+                            roleLabel={u.role === 'mess_admin' ? "ADMIN HRD" : "VIEWER INVENTARIS"} 
+                        />
+                    ))}
                 </div>
             </div>
         )}
@@ -217,22 +238,25 @@ export default function SuperAdminPage() {
                     <div className="space-y-5">
                         <div>
                             <label className="text-[10px] font-black text-blue-500 uppercase ml-1 mb-1 block">Username Login</label>
-                            <input type="text" className="w-full p-4 bg-slate-950 border border-slate-700 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500 transition focus:ring-1 focus:ring-blue-500" 
-                                value={formUser.username} onChange={(e) => setFormUser({...formUser, username: e.target.value})} placeholder="Ex: KRISTYAMIN" />
+                            <input type="text" className="w-full p-4 bg-slate-950 border border-slate-700 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500 transition focus:ring-1 focus:ring-blue-500 uppercase" 
+                                value={formUser.username} onChange={(e) => setFormUser({...formUser, username: e.target.value.toUpperCase()})} placeholder="Ex: HRD_BATAM" />
                         </div>
                         <div>
                             <label className="text-[10px] font-black text-blue-500 uppercase ml-1 mb-1 block">Password Access</label>
                             <input type="text" className="w-full p-4 bg-slate-950 border border-slate-700 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500 transition focus:ring-1 focus:ring-blue-500" 
-                                value={formUser.password} onChange={(e) => setFormUser({...formUser, password: e.target.value})} placeholder="Ex: RAHASIA123" />
+                                value={formUser.password} onChange={(e) => setFormUser({...formUser, password: e.target.value})} placeholder="Ex: 123456" />
                         </div>
                         <div>
                             <label className="text-[10px] font-black text-blue-500 uppercase ml-1 mb-1 block">Role / Jabatan</label>
                             <div className="relative">
                                 <select className="w-full p-4 bg-slate-950 border border-slate-700 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
                                     value={formUser.role} onChange={(e) => setFormUser({...formUser, role: e.target.value})}>
-                                    <option value="admin">🔵 ADMIN STAFF</option>
+                                    <option value="admin">🔵 ADMIN MESIN (PRODUKSI)</option>
                                     <option value="boss">🟡 BOSS / DIREKSI</option>
                                     <option value="super_admin">🟣 SUPER ADMIN</option>
+                                    <option value="" disabled>──────────────────</option>
+                                    <option value="mess_admin">🏡 ADMIN HRD (INVENTARIS)</option>
+                                    <option value="mess_viewer">👀 VIEWER (AKUNTING/BOSS)</option>
                                 </select>
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">▼</div>
                             </div>

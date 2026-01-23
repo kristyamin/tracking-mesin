@@ -9,19 +9,19 @@ export default function Home() {
   const [idSearch, setIdSearch] = useState("");
   
   // State Data
-  const [searchResults, setSearchResults] = useState<any[]>([]); // Menyimpan hasil pencarian (Array)
-  const [selectedMachine, setSelectedMachine] = useState<any>(null); // Menyimpan mesin yang sedang dilihat detailnya
+  const [searchResults, setSearchResults] = useState<any[]>([]); 
+  const [selectedMachine, setSelectedMachine] = useState<any>(null); 
   
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [selectedDetail, setSelectedDetail] = useState<string | null>(null);
   
-  // Login Admin/Boss
+  // Login State
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [creds, setCreds] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
 
-  // --- 1. LOGIKA SEARCH (SUPPORT GROUPING) ---
+  // --- 1. LOGIKA SEARCH ---
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idSearch) return;
@@ -31,7 +31,6 @@ export default function Home() {
     setSearchResults([]);
     setSelectedMachine(null);
 
-    // Cari ID (Bisa dapat banyak mesin)
     const { data, error } = await supabase
       .from("orders")
       .select("*")
@@ -40,10 +39,7 @@ export default function Home() {
     if (error || !data || data.length === 0) {
       setErrorMsg("❌ ID Not Found. Check your ID.");
     } else {
-      // Jika ketemu datanya
       setSearchResults(data);
-
-      // Jika cuma 1 mesin, langsung masuk ke detail (Auto Select)
       if (data.length === 1) {
           const item = data[0];
           setSelectedMachine({
@@ -51,12 +47,10 @@ export default function Home() {
               progress_number: parseInt(item.public_status) || 0
           });
       }
-      // Jika banyak mesin, biarkan selectedMachine null (nanti muncul list pilihan)
     }
     setLoading(false);
   };
 
-  // Helper untuk memilih mesin dari list group
   const handleSelectMachine = (item: any) => {
       setSelectedMachine({
           ...item,
@@ -64,21 +58,25 @@ export default function Home() {
       });
   };
 
-  // Helper tombol kembali
   const handleBack = () => {
-      // Jika hasil pencarian cuma 1, kembali ke pencarian awal
       if (searchResults.length === 1) {
           setSearchResults([]);
           setSelectedMachine(null);
           setIdSearch("");
-      } 
-      // Jika hasil banyak, kembali ke list pilihan
-      else {
+      } else {
           setSelectedMachine(null);
       }
   };
 
-  // --- 2. LOGIKA LOGIN ---
+  // --- 2. LOGIKA BUKA MODAL (RESET SAAT DIBUKA) ---
+  const handleOpenLogin = () => {
+      // Bersihkan inputan setiap kali modal dibuka
+      setCreds({ username: "", password: "" });
+      setShowPassword(false);
+      setShowLoginModal(true);
+  };
+
+  // --- 3. LOGIKA LOGIN (RESET SAAT GAGAL) ---
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -93,6 +91,8 @@ export default function Home() {
 
       if (error || !data) {
         alert("❌ Login Gagal! Username atau Password salah.");
+        // RESET INPUT JIKA GAGAL
+        setCreds({ username: "", password: "" });
       } else {
         // Log Activity
         const newCount = (data.login_count || 0) + 1;
@@ -102,18 +102,23 @@ export default function Home() {
         }).eq("id", data.id);
 
         sessionStorage.setItem("user_role", data.role);
+
+        // ROUTING
         if (data.role === "admin") {
           router.push("/admin");
         } else if (data.role === "boss") {
           router.push("/dashboard-bos"); 
         } else if (data.role === "super_admin") {
           router.push("/super-admin"); 
+        } else if (data.role === "mess_admin" || data.role === "mess_viewer") {
+          router.push("/inventory"); 
         } else {
           alert("Akun tidak memiliki akses.");
         }
       }
     } catch (err) {
       alert("Terjadi kesalahan sistem.");
+      setCreds({ username: "", password: "" }); // Reset juga kalau error sistem
     }
     setLoading(false);
   };
@@ -122,10 +127,11 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 p-4 font-sans text-slate-800 relative flex flex-col justify-center">
       <div className="max-w-md mx-auto w-full">
         
-        {/* === TAMPILAN 1: PENCARIAN (BELUM ADA DATA) === */}
+        {/* TAMPILAN PENCARIAN */}
         {searchResults.length === 0 && (
           <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-8 border border-white relative animate-in fade-in zoom-in-95 duration-500">
-            <button onClick={() => setShowLoginModal(true)} className="absolute top-6 right-6 p-2 rounded-full text-gray-300 hover:text-blue-600 transition-all text-2xl">🔐</button>
+            {/* TOMBOL GEMBOK (PAKAI FUNGSI BARU) */}
+            <button onClick={handleOpenLogin} className="absolute top-6 right-6 p-2 rounded-full text-gray-300 hover:text-blue-600 transition-all text-2xl">🔐</button>
             
             <div className="flex justify-center mb-6 mt-4">
                <img src="/logo.png" alt="Logo Djitoe" className="h-32 w-auto object-contain" />
@@ -148,22 +154,20 @@ export default function Home() {
             </form>
             
             {errorMsg && <div className="mt-6 p-4 bg-red-50 rounded-2xl text-red-500 text-xs font-bold text-center border border-red-100 animate-pulse">{errorMsg}</div>}
-            <div className="mt-10 border-t border-gray-50 pt-6"><p className="text-center text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.2</p></div>
+            <div className="mt-10 border-t border-gray-50 pt-6"><p className="text-center text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.0</p></div>
             <div className="mt-0 border-t border-gray-50 pt-1"><p className="text-center text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">www.djitoemesindo.com</p></div>
           </div>
         )}
 
-        {/* === TAMPILAN 2: PILIH MESIN (JIKA > 1 MESIN) === */}
+        {/* TAMPILAN PILIH MESIN */}
         {(searchResults.length > 1 && !selectedMachine) && (
             <div className="animate-in fade-in slide-in-from-bottom duration-500">
                 <button onClick={() => { setSearchResults([]); setIdSearch(""); }} className="mb-6 bg-white px-4 py-2 rounded-full shadow-sm text-slate-400 text-xs font-bold hover:text-blue-600 hover:shadow-md flex items-center gap-2 transition-all w-fit mx-auto">← CHECK ANOTHER ID</button>
-                
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-6 border border-white relative">
                     <div className="text-center mb-6">
-                        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">CHOOSE YOUR MACHINE</h2>
-                        <p className="text-gray-400 text-xs font-bold">{searchResults.length} Machines identified for this ID</p>
+                        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">PILIH MESIN</h2>
+                        <p className="text-gray-400 text-xs font-bold">Ditemukan {searchResults.length} mesin untuk ID ini</p>
                     </div>
-
                     <div className="space-y-3">
                         {searchResults.map((item, idx) => (
                             <button key={item.id} onClick={() => handleSelectMachine(item)} 
@@ -183,16 +187,14 @@ export default function Home() {
             </div>
         )}
 
-        {/* === TAMPILAN 3: DETAIL TIMELINE === */}
+        {/* TAMPILAN DETAIL */}
         {selectedMachine && (
           <div className="animate-in fade-in slide-in-from-bottom duration-500">
             <button onClick={handleBack} className="mb-6 bg-white px-4 py-2 rounded-full shadow-sm text-slate-400 text-xs font-bold hover:text-blue-600 hover:shadow-md flex items-center gap-2 transition-all w-fit mx-auto">
-                ← {searchResults.length > 1 ? "CHOOSE ANOTHER MACHINE" : "CHECK ANOTHER ID"}
+                ← {searchResults.length > 1 ? "PILIH MESIN LAIN" : "CHECK ANOTHER ID"}
             </button>
             
             <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-6 border border-white relative">
-              
-              {/* Info Mesin */}
               <div className="bg-blue-50/50 p-5 rounded-3xl mb-8 border border-blue-50">
                 <div className="flex justify-between items-center border-b border-blue-100 pb-3 mb-3">
                     <span className="text-[10px] font-black text-blue-300 uppercase tracking-wider">Machine</span>
@@ -204,87 +206,47 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* === [UPDATED] SPESIFIKASI MESIN (MENGGANTIKAN LATEST UPDATE) === */}
               {selectedMachine.spesifikasi && (
                 <div className="mb-8 bg-blue-50 p-5 rounded-3xl border border-blue-100 shadow-sm text-slate-800">
-                  <p className="text-[10px] font-black text-blue-600 uppercase mb-2 flex items-center gap-2">
-                     ⚙️ Product Specifications
-                  </p>
-                  <p className="font-bold leading-relaxed text-sm whitespace-pre-wrap">
-                     {selectedMachine.spesifikasi}
-                  </p>
+                  <p className="text-[10px] font-black text-blue-600 uppercase mb-2 flex items-center gap-2">⚙️ SPESIFIKASI MESIN</p>
+                  <p className="font-bold leading-relaxed text-sm whitespace-pre-wrap">{selectedMachine.spesifikasi}</p>
                 </div>
               )}
-              {/* ============================================================= */}
 
-              {/* TIMELINE PROGRESS */}
               <div className="space-y-0 relative pl-2">
                 <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-gray-100 -z-10"></div>
-                
-                {/* STEP 1: Confirmed */}
                 <div className="flex gap-5 pb-8">
                     <div className="flex flex-col items-center"><div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-sm shadow-lg shadow-green-200 z-10">✓</div></div>
                     <div className="pt-2"><p className="font-bold text-gray-400 text-sm">Order Confirmed</p></div>
                 </div>
-                
-                {/* STEP 2: Assembly */}
-                <div onClick={() => (selectedMachine.progress_number >= 1 && selectedMachine.progress_number < 75) && setSelectedDetail("perakitan")} 
-                     className={`flex gap-5 pb-8 ${(selectedMachine.progress_number >= 1 && selectedMachine.progress_number < 75) ? 'cursor-pointer group' : ''}`}>
+                <div onClick={() => (selectedMachine.progress_number >= 1 && selectedMachine.progress_number < 75) && setSelectedDetail("perakitan")} className={`flex gap-5 pb-8 ${(selectedMachine.progress_number >= 1 && selectedMachine.progress_number < 75) ? 'cursor-pointer group' : ''}`}>
                   <div className="flex flex-col items-center relative">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all z-10 shadow-lg 
-                      ${selectedMachine.progress_number >= 75 ? 'bg-green-500 text-white shadow-green-200' : (selectedMachine.progress_number >= 1 ? 'bg-blue-600 text-white ring-4 ring-blue-50 shadow-blue-300' : 'bg-white border-2 border-gray-100 text-gray-300')}`}>
-                          {selectedMachine.progress_number >= 75 ? '✓' : '2'}
-                      </div>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all z-10 shadow-lg ${selectedMachine.progress_number >= 75 ? 'bg-green-500 text-white shadow-green-200' : (selectedMachine.progress_number >= 1 ? 'bg-blue-600 text-white ring-4 ring-blue-50 shadow-blue-300' : 'bg-white border-2 border-gray-100 text-gray-300')}`}>{selectedMachine.progress_number >= 75 ? '✓' : '2'}</div>
                   </div>
                   <div className="pt-2">
                       <p className={`font-bold text-sm ${selectedMachine.progress_number >= 1 && selectedMachine.progress_number < 75 ? 'text-blue-700' : (selectedMachine.progress_number >= 75 ? 'text-gray-400' : 'text-gray-300')}`}>Component Assembly</p>
-                      <p className="text-[10px] font-bold uppercase mt-1">
-                          {selectedMachine.progress_number >= 75 ? <span className="text-green-500">✓ Finished</span> : (selectedMachine.progress_number >= 1 ? <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded">● Detail</span> : <span className="text-gray-300">🔒 Locked</span>)}
-                      </p>
+                      <p className="text-[10px] font-bold uppercase mt-1">{selectedMachine.progress_number >= 75 ? <span className="text-green-500">✓ Finished</span> : (selectedMachine.progress_number >= 1 ? <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded">● Detail</span> : <span className="text-gray-300">🔒 Locked</span>)}</p>
                   </div>
                 </div>
-
-                {/* STEP 3: QC */}
-                <div onClick={() => (selectedMachine.progress_number >= 75 && selectedMachine.progress_number < 100) && setSelectedDetail("qc")} 
-                     className={`flex gap-5 pb-8 ${(selectedMachine.progress_number >= 75 && selectedMachine.progress_number < 100) ? 'cursor-pointer group' : ''}`}>
+                <div onClick={() => (selectedMachine.progress_number >= 75 && selectedMachine.progress_number < 100) && setSelectedDetail("qc")} className={`flex gap-5 pb-8 ${(selectedMachine.progress_number >= 75 && selectedMachine.progress_number < 100) ? 'cursor-pointer group' : ''}`}>
                   <div className="flex flex-col items-center relative">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all z-10 shadow-lg 
-                      ${selectedMachine.progress_number >= 100 ? 'bg-green-500 text-white shadow-green-200' : (selectedMachine.progress_number >= 75 ? 'bg-blue-600 text-white ring-4 ring-blue-50 shadow-blue-300' : 'bg-white border-2 border-gray-100 text-gray-300')}`}>
-                          {selectedMachine.progress_number >= 100 ? '✓' : '3'}
-                      </div>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all z-10 shadow-lg ${selectedMachine.progress_number >= 100 ? 'bg-green-500 text-white shadow-green-200' : (selectedMachine.progress_number >= 75 ? 'bg-blue-600 text-white ring-4 ring-blue-50 shadow-blue-300' : 'bg-white border-2 border-gray-100 text-gray-300')}`}>{selectedMachine.progress_number >= 100 ? '✓' : '3'}</div>
                   </div>
                   <div className="pt-2">
                       <p className={`font-bold text-sm ${selectedMachine.progress_number >= 75 && selectedMachine.progress_number < 100 ? 'text-blue-700' : (selectedMachine.progress_number >= 100 ? 'text-gray-400' : 'text-gray-300')}`}>Quality Control</p>
-                      <p className="text-[10px] font-bold uppercase mt-1">
-                          {selectedMachine.progress_number >= 100 ? <span className="text-green-500">✓ Finished</span> : (selectedMachine.progress_number >= 75 ? <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded">● Detail</span> : <span className="text-gray-300">🔒 Locked</span>)}
-                      </p>
+                      <p className="text-[10px] font-bold uppercase mt-1">{selectedMachine.progress_number >= 100 ? <span className="text-green-500">✓ Finished</span> : (selectedMachine.progress_number >= 75 ? <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded">● Detail</span> : <span className="text-gray-300">🔒 Locked</span>)}</p>
                   </div>
                 </div>
-
-                {/* STEP 4: FINAL STATUS */}
                 <div className={`flex gap-5 ${selectedMachine.progress_number < 100 ? 'opacity-40' : ''}`}>
                   <div className="flex flex-col items-center relative">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all z-10 shadow-lg 
-                        ${selectedMachine.delivery_status === 'Selesai' 
-                            ? 'bg-green-600 text-white shadow-green-200' 
-                            : (selectedMachine.progress_number >= 100 ? 'bg-blue-600 text-white shadow-blue-300' : 'bg-white border-2 border-gray-100 text-gray-300')}`}>
-                      {selectedMachine.delivery_status === 'Selesai' ? '✓' : (selectedMachine.delivery_status === 'Dalam Perjalanan' ? '🚚' : '4')}
-                    </div>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all z-10 shadow-lg ${selectedMachine.delivery_status === 'Selesai' ? 'bg-green-600 text-white shadow-green-200' : (selectedMachine.progress_number >= 100 ? 'bg-blue-600 text-white shadow-blue-300' : 'bg-white border-2 border-gray-100 text-gray-300')}`}>{selectedMachine.delivery_status === 'Selesai' ? '✓' : (selectedMachine.delivery_status === 'Dalam Perjalanan' ? '🚚' : '4')}</div>
                   </div>
-                  
                   <div className="pt-2">
-                    <p className={`font-bold text-sm ${selectedMachine.progress_number >= 100 ? 'text-slate-900' : 'text-gray-300'}`}>
-                        {selectedMachine.delivery_status === 'Selesai' && "Completed"}
-                        {selectedMachine.delivery_status === 'Dalam Perjalanan' && "In Transit"}
-                        {selectedMachine.delivery_status === 'Siap Dikirim' && "Ready to Ship"}
-                        {(!selectedMachine.delivery_status && selectedMachine.progress_number >= 100) && "Ready to Ship"} 
-                        {selectedMachine.progress_number < 100 && "Ready to Ship"}
-                    </p>
+                    <p className={`font-bold text-sm ${selectedMachine.progress_number >= 100 ? 'text-slate-900' : 'text-gray-300'}`}>{selectedMachine.delivery_status === 'Selesai' && "Completed"}{selectedMachine.delivery_status === 'Dalam Perjalanan' && "In Transit"}{selectedMachine.delivery_status === 'Siap Dikirim' && "Ready to Ship"}{(!selectedMachine.delivery_status && selectedMachine.progress_number >= 100) && "Ready to Ship"}{selectedMachine.progress_number < 100 && "Ready to Ship"}</p>
                     {selectedMachine.delivery_status === 'Dalam Perjalanan' && <p className="text-[10px] font-bold text-blue-500 mt-1 uppercase animate-pulse">● Out for Delivery</p>}
                     {selectedMachine.delivery_status === 'Selesai' && <p className="text-[10px] font-bold text-green-500 mt-1 uppercase">✓ Received</p>}
                   </div>
                 </div>
-
               </div>
             </div>
             <div className="text-center mt-8 space-y-2"><p className="text-gray-300 text-[10px] font-bold tracking-[0.3em] uppercase">PT Djitoe Mesindo</p></div>
@@ -304,10 +266,7 @@ export default function Home() {
               <h3 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">search results</h3>
               <div className="h-1 w-12 bg-blue-500 rounded-full mb-4"></div>
               <p className="text-gray-500 text-sm mb-4 leading-relaxed font-medium">Status Progress: <strong className="text-slate-900">{selectedMachine.public_status}</strong>.</p>
-              
-              {/* DESKRIPSI PROGRESS (Di sini tetap bisa muncul kalau mau, di Modal) */}
               {selectedMachine.deskripsi_progress && (<div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 text-sm"><p className="text-xs font-bold text-blue-600 uppercase mb-1">NOTE:</p><p className="text-slate-700">{selectedMachine.deskripsi_progress}</p></div>)}
-              
               <button onClick={() => setSelectedDetail(null)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all">Close</button>
             </div>
           </div>
