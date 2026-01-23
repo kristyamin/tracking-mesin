@@ -165,8 +165,8 @@ export default function Home() {
                 <button onClick={() => { setSearchResults([]); setIdSearch(""); }} className="mb-6 bg-white px-4 py-2 rounded-full shadow-sm text-slate-400 text-xs font-bold hover:text-blue-600 hover:shadow-md flex items-center gap-2 transition-all w-fit mx-auto">← CHECK ANOTHER ID</button>
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-6 border border-white relative">
                     <div className="text-center mb-6">
-                        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">PILIH MESIN</h2>
-                        <p className="text-gray-400 text-xs font-bold">Ditemukan {searchResults.length} mesin untuk ID ini</p>
+                        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">CHOOSE MACHINE</h2>
+                        <p className="text-gray-400 text-xs font-bold">{searchResults.length} machines found for this ID</p>
                     </div>
                     <div className="space-y-3">
                         {searchResults.map((item, idx) => (
@@ -191,7 +191,7 @@ export default function Home() {
         {selectedMachine && (
           <div className="animate-in fade-in slide-in-from-bottom duration-500">
             <button onClick={handleBack} className="mb-6 bg-white px-4 py-2 rounded-full shadow-sm text-slate-400 text-xs font-bold hover:text-blue-600 hover:shadow-md flex items-center gap-2 transition-all w-fit mx-auto">
-                ← {searchResults.length > 1 ? "PILIH MESIN LAIN" : "CHECK ANOTHER ID"}
+                ← {searchResults.length > 1 ? "CHANGE MACHINE" : "CHECK ANOTHER ID"}
             </button>
             
             <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-6 border border-white relative">
@@ -208,7 +208,7 @@ export default function Home() {
 
               {selectedMachine.spesifikasi && (
                 <div className="mb-8 bg-blue-50 p-5 rounded-3xl border border-blue-100 shadow-sm text-slate-800">
-                  <p className="text-[10px] font-black text-blue-600 uppercase mb-2 flex items-center gap-2">⚙️ SPESIFIKASI MESIN</p>
+                  <p className="text-[10px] font-black text-blue-600 uppercase mb-2 flex items-center gap-2">⚙️ Specifications</p>
                   <p className="font-bold leading-relaxed text-sm whitespace-pre-wrap">{selectedMachine.spesifikasi}</p>
                 </div>
               )}
