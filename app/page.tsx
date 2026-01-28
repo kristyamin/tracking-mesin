@@ -155,27 +155,25 @@ export default function Home() {
               </button>
             </form>
             
-            {/* === BAGIAN INSTALL APLIKASI (UPDATE LOGO SVG) === */}
+            {/* === BAGIAN INSTALL APLIKASI === */}
             <div className="mt-8 pt-6 border-t border-gray-100">
                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-3 tracking-widest text-center">Install</p>
                 <div className="grid grid-cols-2 gap-3">
                     
-                    {/* TOMBOL ANDROID (Logo Hijau Asli) */}
+                    {/* TOMBOL ANDROID (DIPERBAIKI) */}
                     <a href="/djitoe-app.apk" download className="flex flex-col items-center justify-center bg-green-50 text-green-600 border border-green-200 py-3 px-2 rounded-xl hover:bg-green-600 hover:text-white transition-all cursor-pointer text-center group">
-                        {/* SVG Logo Android */}
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" className="w-7 h-7 mb-1 group-hover:scale-110 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" className="w-7 h-7 mb-1 group-hover:scale-110 transition pointer-events-none">
                           <path d="M420.55,301.93a24,24,0,1,1,24-24,24,24,0,0,1-24,24m-265.1,0a24,24,0,1,1,24-24,24,24,0,0,1-24,24m273.7-144.48,47.94-83a10,10,0,1,0-17.32-10h0L413.66,144.4a286.43,286.43,0,0,0-251.32,0L116.14,64.44a10,10,0,1,0-17.32,10h0l47.94,83C64.53,202.22,8.24,285.55,0,384H576c-8.24-98.45-64.53-181.78-146.85-226.55"/>
                         </svg>
-                        <p className="text-[9px] font-black uppercase">Android</p>
+                        <p className="text-[9px] font-black uppercase pointer-events-none">Android</p>
                     </a>
 
-                    {/* TOMBOL IPHONE (Logo Apple Asli Dark) */}
+                    {/* TOMBOL IPHONE */}
                     <button onClick={() => setShowIOSGuide(true)} className="flex flex-col items-center justify-center bg-slate-50 text-slate-800 border border-slate-200 py-3 px-2 rounded-xl hover:bg-slate-800 hover:text-white transition-all cursor-pointer text-center group">
-                        {/* SVG Logo Apple */}
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" className="w-7 h-7 mb-1 group-hover:scale-110 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" className="w-7 h-7 mb-1 group-hover:scale-110 transition pointer-events-none">
                           <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-46.6-35.5-4.6-86.7 18.1-110.6 18.1-23.9 0-67.3-20.9-101.2-19.4-49.2 1.8-88.7 26.9-113.3 69.5-40.5 69.4-10.5 172.2 29.2 229.6 19.2 27.9 40.9 58.4 70.5 58.4 28.1 0 38.6-18.1 72.3-18.1 34.2 0 43.7 18.1 73.5 18.1 29.2 0 47.7-25.5 65.8-51.1 20.4-28.6 28.8-41.2 32.1-42.4-17.9-7.7-31.2-23.6-33.6-49.3zM248.3 52.3c22.4-26.9 37.6-64.1 33.4-101.2-32.1 2.5-71.3 21.1-94.2 48-20.6 24.1-38.6 61.9-33.4 98.9 35.8 2.8 72.5-19.1 94.2-45.7z"/>
                         </svg>
-                        <p className="text-[9px] font-black uppercase">iPhone / iOS</p>
+                        <p className="text-[9px] font-black uppercase pointer-events-none">iPhone / iOS</p>
                     </button>
                     
                 </div>
@@ -294,87 +292,87 @@ export default function Home() {
             <div className="text-center mt-8 space-y-2"><p className="text-gray-300 text-[10px] font-bold tracking-[0.3em] uppercase">PT Djitoe Mesindo</p></div>
           </div>
         )}
-      </div>
 
-      {/* === MODAL 4: PANDUAN IPHONE (PWA) === */}
-      {showIOSGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-in fade-in">
-          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-xs shadow-2xl relative border-2 border-white text-center">
-            <button onClick={() => setShowIOSGuide(false)} className="absolute top-4 right-4 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-bold">✕</button>
-            <div className="text-5xl mb-4">
-                {/* SVG Logo Apple Besar untuk Modal */}
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" className="w-16 h-16 mx-auto text-slate-800">
-                  <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-46.6-35.5-4.6-86.7 18.1-110.6 18.1-23.9 0-67.3-20.9-101.2-19.4-49.2 1.8-88.7 26.9-113.3 69.5-40.5 69.4-10.5 172.2 29.2 229.6 19.2 27.9 40.9 58.4 70.5 58.4 28.1 0 38.6-18.1 72.3-18.1 34.2 0 43.7 18.1 73.5 18.1 29.2 0 47.7-25.5 65.8-51.1 20.4-28.6 28.8-41.2 32.1-42.4-17.9-7.7-31.2-23.6-33.6-49.3zM248.3 52.3c22.4-26.9 37.6-64.1 33.4-101.2-32.1 2.5-71.3 21.1-94.2 48-20.6 24.1-38.6 61.9-33.4 98.9 35.8 2.8 72.5-19.1 94.2-45.7z"/>
-                </svg>
-            </div>
-            <h3 className="text-xl font-black text-slate-800 mb-2 uppercase">Install di iPhone</h3>
-            <p className="text-xs text-gray-500 mb-6 leading-relaxed">Apple tidak mengizinkan download file APK. Silakan ikuti langkah ini untuk hasil seperti aplikasi:</p>
-            
-            <div className="space-y-4 text-left bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <div className="flex gap-3 items-center">
-                    <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
-                    <p className="text-xs font-bold text-slate-700">Tekan tombol <span className="font-black text-blue-600">Share (Kotak Panah)</span> di browser Safari.</p>
-                </div>
-                <div className="flex gap-3 items-center">
-                    <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
-                    <p className="text-xs font-bold text-slate-700">Geser menu, pilih <span className="font-black text-blue-600">"Add to Home Screen"</span> (Tambah ke Layar Utama).</p>
-                </div>
-                <div className="flex gap-3 items-center">
-                    <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
-                    <p className="text-xs font-bold text-slate-700">Klik <span className="font-black text-blue-600">Add (Tambah)</span> di pojok kanan atas.</p>
-                </div>
-            </div>
-            
-            <button onClick={() => setShowIOSGuide(false)} className="w-full bg-slate-900 text-white py-3 rounded-xl font-black mt-6 hover:bg-black transition-all text-xs uppercase">Saya Mengerti</button>
-          </div>
-        </div>
-      )}
-
-      {/* === MODAL DETAIL FOTO & LOGIN STAFF (TETAP SAMA) === */}
-      {selectedDetail && selectedMachine && (
-        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-5 z-50 backdrop-blur-md animate-in fade-in">
-          <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl relative border border-white/50">
-            <button onClick={() => setSelectedDetail(null)} className="absolute top-4 right-4 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center z-10 backdrop-blur-sm transition-all">✕</button>
-            <div className="h-64 bg-gray-200">
-                <img src={selectedMachine.public_foto_url || "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500"} className="w-full h-full object-cover" alt="Progress Picture" />
-            </div>
-            <div className="p-8">
-              <h3 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">SEARCH RESULTS</h3>
-              <div className="h-1 w-12 bg-blue-500 rounded-full mb-4"></div>
-              <p className="text-gray-500 text-sm mb-4 leading-relaxed font-medium">Status Progress: <strong className="text-slate-900">{selectedMachine.public_status}</strong>.</p>
+        {/* === MODAL 4: PANDUAN IPHONE (PWA) === */}
+        {showIOSGuide && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-in fade-in">
+            <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-xs shadow-2xl relative border-2 border-white text-center">
+              <button onClick={() => setShowIOSGuide(false)} className="absolute top-4 right-4 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-bold">✕</button>
+              <div className="text-5xl mb-4">
+                  {/* SVG Logo Apple Besar untuk Modal */}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" className="w-16 h-16 mx-auto text-slate-800">
+                    <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-46.6-35.5-4.6-86.7 18.1-110.6 18.1-23.9 0-67.3-20.9-101.2-19.4-49.2 1.8-88.7 26.9-113.3 69.5-40.5 69.4-10.5 172.2 29.2 229.6 19.2 27.9 40.9 58.4 70.5 58.4 28.1 0 38.6-18.1 72.3-18.1 34.2 0 43.7 18.1 73.5 18.1 29.2 0 47.7-25.5 65.8-51.1 20.4-28.6 28.8-41.2 32.1-42.4-17.9-7.7-31.2-23.6-33.6-49.3zM248.3 52.3c22.4-26.9 37.6-64.1 33.4-101.2-32.1 2.5-71.3 21.1-94.2 48-20.6 24.1-38.6 61.9-33.4 98.9 35.8 2.8 72.5-19.1 94.2-45.7z"/>
+                  </svg>
+              </div>
+              <h3 className="text-xl font-black text-slate-800 mb-2 uppercase">Install di iPhone</h3>
+              <p className="text-xs text-gray-500 mb-6 leading-relaxed">Apple tidak mengizinkan download file APK. Silakan ikuti langkah ini untuk hasil seperti aplikasi:</p>
               
-              {selectedMachine.deskripsi_progress && (
-                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 text-sm">
-                      <p className="text-xs font-bold text-blue-600 uppercase mb-1">NOTE :</p>
-                      <p className="text-slate-700">{selectedMachine.deskripsi_progress}</p>
+              <div className="space-y-4 text-left bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div className="flex gap-3 items-center">
+                      <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                      <p className="text-xs font-bold text-slate-700">Tekan tombol <span className="font-black text-blue-600">Share (Kotak Panah)</span> di browser Safari.</p>
                   </div>
-              )}
-              <button onClick={() => setSelectedDetail(null)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all">CLOSE</button>
+                  <div className="flex gap-3 items-center">
+                      <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                      <p className="text-xs font-bold text-slate-700">Geser menu, pilih <span className="font-black text-blue-600">"Add to Home Screen"</span> (Tambah ke Layar Utama).</p>
+                  </div>
+                  <div className="flex gap-3 items-center">
+                      <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                      <p className="text-xs font-bold text-slate-700">Klik <span className="font-black text-blue-600">Add (Tambah)</span> di pojok kanan atas.</p>
+                  </div>
+              </div>
+              
+              <button onClick={() => setShowIOSGuide(false)} className="w-full bg-slate-900 text-white py-3 rounded-xl font-black mt-6 hover:bg-black transition-all text-xs uppercase">Saya Mengerti</button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/20 backdrop-blur-md animate-in fade-in zoom-in-95">
-          <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-xs shadow-2xl relative border border-white">
-            <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500">✕</button>
-            <div className="flex justify-center mb-8"><div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-4xl">🔐</div></div>
-            <h2 className="text-2xl font-black text-center text-slate-800 uppercase mb-2 tracking-tight">Access Staff</h2>
-            <p className="text-xs text-center text-gray-400 font-bold mb-8 uppercase tracking-widest">Admin & Direksi Only</p>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                  <input type="text" placeholder="USERNAME" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-slate-900 font-black outline-none focus:border-blue-500 text-center uppercase tracking-wider text-sm transition-all placeholder-gray-300" value={creds.username} onChange={(e) => setCreds({ ...creds, username: e.target.value.toUpperCase() })} />
+        {/* === MODAL DETAIL FOTO & LOGIN STAFF (TETAP SAMA) === */}
+        {selectedDetail && selectedMachine && (
+          <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-5 z-50 backdrop-blur-md animate-in fade-in">
+            <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl relative border border-white/50">
+              <button onClick={() => setSelectedDetail(null)} className="absolute top-4 right-4 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center z-10 backdrop-blur-sm transition-all">✕</button>
+              <div className="h-64 bg-gray-200">
+                  <img src={selectedMachine.public_foto_url || "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500"} className="w-full h-full object-cover" alt="Progress Picture" />
               </div>
-              <div className="relative">
-                  <input type={showPassword ? "text" : "password"} placeholder="••••" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-slate-900 font-black outline-none focus:border-blue-500 text-center tracking-widest text-base transition-all placeholder-gray-300 pr-12" value={creds.password} onChange={(e) => setCreds({ ...creds, password: e.target.value })} />
-                  <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl grayscale opacity-50 hover:opacity-100 active:scale-95 transition-all" onMouseDown={() => setShowPassword(true)} onMouseUp={() => setShowPassword(false)} onMouseLeave={() => setShowPassword(false)} onTouchStart={() => setShowPassword(true)} onTouchEnd={() => setShowPassword(false)}>{showPassword ? "👀" : "👁️"}</button>
+              <div className="p-8">
+                <h3 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">SEARCH RESULTS</h3>
+                <div className="h-1 w-12 bg-blue-500 rounded-full mb-4"></div>
+                <p className="text-gray-500 text-sm mb-4 leading-relaxed font-medium">Status Progress: <strong className="text-slate-900">{selectedMachine.public_status}</strong>.</p>
+                
+                {selectedMachine.deskripsi_progress && (
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 text-sm">
+                        <p className="text-xs font-bold text-blue-600 uppercase mb-1">NOTE :</p>
+                        <p className="text-slate-700">{selectedMachine.deskripsi_progress}</p>
+                    </div>
+                )}
+                <button onClick={() => setSelectedDetail(null)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all">CLOSE</button>
               </div>
-              <button className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black mt-2 hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all text-sm">MASUK SYSTEM</button>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {showLoginModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/20 backdrop-blur-md animate-in fade-in zoom-in-95">
+            <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-xs shadow-2xl relative border border-white">
+              <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500">✕</button>
+              <div className="flex justify-center mb-8"><div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-4xl">🔐</div></div>
+              <h2 className="text-2xl font-black text-center text-slate-800 uppercase mb-2 tracking-tight">Access Staff</h2>
+              <p className="text-xs text-center text-gray-400 font-bold mb-8 uppercase tracking-widest">Admin & Direksi Only</p>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                    <input type="text" placeholder="USERNAME" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-slate-900 font-black outline-none focus:border-blue-500 text-center uppercase tracking-wider text-sm transition-all placeholder-gray-300" value={creds.username} onChange={(e) => setCreds({ ...creds, username: e.target.value.toUpperCase() })} />
+                </div>
+                <div className="relative">
+                    <input type={showPassword ? "text" : "password"} placeholder="••••" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-slate-900 font-black outline-none focus:border-blue-500 text-center tracking-widest text-base transition-all placeholder-gray-300 pr-12" value={creds.password} onChange={(e) => setCreds({ ...creds, password: e.target.value })} />
+                    <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl grayscale opacity-50 hover:opacity-100 active:scale-95 transition-all" onMouseDown={() => setShowPassword(true)} onMouseUp={() => setShowPassword(false)} onMouseLeave={() => setShowPassword(false)} onTouchStart={() => setShowPassword(true)} onTouchEnd={() => setShowPassword(false)}>{showPassword ? "👀" : "👁️"}</button>
+                </div>
+                <button className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black mt-2 hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all text-sm">MASUK SYSTEM</button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
