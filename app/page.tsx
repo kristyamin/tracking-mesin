@@ -304,25 +304,25 @@ export default function Home() {
                     <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-46.6-35.5-4.6-86.7 18.1-110.6 18.1-23.9 0-67.3-20.9-101.2-19.4-49.2 1.8-88.7 26.9-113.3 69.5-40.5 69.4-10.5 172.2 29.2 229.6 19.2 27.9 40.9 58.4 70.5 58.4 28.1 0 38.6-18.1 72.3-18.1 34.2 0 43.7 18.1 73.5 18.1 29.2 0 47.7-25.5 65.8-51.1 20.4-28.6 28.8-41.2 32.1-42.4-17.9-7.7-31.2-23.6-33.6-49.3zM248.3 52.3c22.4-26.9 37.6-64.1 33.4-101.2-32.1 2.5-71.3 21.1-94.2 48-20.6 24.1-38.6 61.9-33.4 98.9 35.8 2.8 72.5-19.1 94.2-45.7z"/>
                   </svg>
               </div>
-              <h3 className="text-xl font-black text-slate-800 mb-2 uppercase">Install di iPhone</h3>
-              <p className="text-xs text-gray-500 mb-6 leading-relaxed">Apple tidak mengizinkan download file APK. Silakan ikuti langkah ini untuk hasil seperti aplikasi:</p>
+              <h3 className="text-xl font-black text-slate-800 mb-2 uppercase">Install Iphone</h3>
+              <p className="text-xs text-gray-500 mb-6 leading-relaxed">Apple devices do not natively support APK files. To achieve an app-like experience, please follow these steps to add the shortcut to your home screen:</p>
               
               <div className="space-y-4 text-left bg-slate-50 p-4 rounded-2xl border border-slate-100">
                   <div className="flex gap-3 items-center">
                       <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
-                      <p className="text-xs font-bold text-slate-700">Tekan tombol <span className="font-black text-blue-600">Share (Kotak Panah)</span> di browser Safari.</p>
+                      <p className="text-xs font-bold text-slate-700">Open <span className="font-black text-blue-600">The (LINK)</span> in Safari.</p>
                   </div>
                   <div className="flex gap-3 items-center">
                       <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
-                      <p className="text-xs font-bold text-slate-700">Geser menu, pilih <span className="font-black text-blue-600">"Add to Home Screen"</span> (Tambah ke Layar Utama).</p>
+                      <p className="text-xs font-bold text-slate-700">Tap the Share icon (at the bottom of the screen.) <span className="font-black text-blue-600">Add to Home Screen</span> </p>
                   </div>
                   <div className="flex gap-3 items-center">
                       <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
-                      <p className="text-xs font-bold text-slate-700">Klik <span className="font-black text-blue-600">Add (Tambah)</span> di pojok kanan atas.</p>
+                      <p className="text-xs font-bold text-slate-700">Name your app and select<span className="font-black text-blue-600"> Add</span> to finish.</p>
                   </div>
               </div>
               
-              <button onClick={() => setShowIOSGuide(false)} className="w-full bg-slate-900 text-white py-3 rounded-xl font-black mt-6 hover:bg-black transition-all text-xs uppercase">Saya Mengerti</button>
+              <button onClick={() => setShowIOSGuide(false)} className="w-full bg-slate-900 text-white py-3 rounded-xl font-black mt-6 hover:bg-black transition-all text-xs uppercase">Got It</button>
             </div>
           </div>
         )}
