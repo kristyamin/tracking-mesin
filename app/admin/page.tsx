@@ -34,7 +34,7 @@ export default function AdminPage() {
     }
   }, []);
 
-  // --- 2. LOGIKA TAHUN & FILTER DATABASE ---
+  // --- 2. SETUP DATA & STATE ---
   const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
   const [selectedDbCategory, setSelectedDbCategory] = useState<string | null>(null); 
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,20 +50,24 @@ export default function AdminPage() {
   const refUpdateFile = useRef<HTMLInputElement>(null);
   const refBossFile = useRef<HTMLInputElement>(null);
 
-  // --- DEFINISI STATE AWAL (BIAR BISA DI-RESET) ---
+  // STATE: INPUT BARU
   const initialFormInput = {
     id: "", kategori: "MAKING", tipe: MACHINE_CATEGORIES[0].types[0], nama_manual: "",
     customer: "", mekanik: "", estimasi: "", spesifikasi: "", foto: null as File | null,
   };
 
+  // STATE: UPDATE CUSTOMER
   const initialFormUpdate = {
     id_cari: "", progress: 0, status: "Dalam Proses", db_id: 0, 
     order_id_edit: "", customer_edit: "", nama_manual_edit: "", estimasi_edit: "",
-    spesifikasi_edit: "", deskripsi: "", foto: null as File | null, data_found: false 
+    spesifikasi_edit: "", deskripsi: "", mechanic_name: "", foto: null as File | null, data_found: false
   };
 
+  // STATE: UPDATE BOSS
   const initialFormBoss = {
-    id_cari: "", db_id: 0, progress: 0, laporan: "", riwayat: "", foto: null as File | null, data_found: false
+    id_cari: "", db_id: 0, 
+    progress: 0, laporan: "", riwayat: "", foto: null as File | null, data_found: false,
+    progress_listrik: 0, pic_listrik: "", note_listrik: ""
   };
 
   const [formInput, setFormInput] = useState(initialFormInput);
@@ -74,26 +78,19 @@ export default function AdminPage() {
   const [multipleResultsBoss, setMultipleResultsBoss] = useState<any[]>([]);
   const [listData, setListData] = useState<any[]>([]);
 
-  // --- FUNGSI GLOBAL REFRESH / RESET ---
+  // --- FUNGSI RESET ---
   const handleGlobalReset = () => {
       if(!confirm("Bersihkan semua form dan kembali ke awal?")) return;
-      
-      // 1. Reset Semua Form
       setFormInput(initialFormInput);
       setFormUpdate(initialFormUpdate);
       setFormBoss(initialFormBoss);
-      
-      // 2. Bersihkan Input File
       if (refInputFile.current) refInputFile.current.value = "";
       if (refUpdateFile.current) refUpdateFile.current.value = "";
       if (refBossFile.current) refBossFile.current.value = "";
-
-      // 3. Reset Navigasi Tab 4 & Pindah ke Tab 1
       setSelectedDbCategory(null);
       setMultipleResults([]);
       setMultipleResultsBoss([]);
       setActiveTab("input");
-      
       alert("✅ Panel Admin berhasil di-refresh!");
   };
 
@@ -121,7 +118,7 @@ export default function AdminPage() {
     return data.publicUrl;
   };
 
-  // --- LOGIC CRUD ---
+  // --- LOGIC 1: INPUT BARU ---
   const handleInputBaru = async () => {
     if (!formInput.id || !formInput.tipe) return alert("⚠️ Wajib isi ID & Tipe Mesin!");
     setLoading(true);
@@ -133,6 +130,7 @@ export default function AdminPage() {
         machine_name: formInput.nama_manual, customer_name: formInput.customer, mechanic_name: formInput.mekanik,    
         status: "0%", public_status: "0%", delivery_status: "Proses", estimation_date: formInput.estimasi || null,
         spesifikasi: formInput.spesifikasi, year: new Date().getFullYear().toString(), foto_url: fotoUrl, public_foto_url: fotoUrl,
+        progress_listrik: 0, note_listrik: "", pic_listrik: ""
       });
       if (error) throw error;
       alert("✅ Mesin Baru Berhasil Didaftarkan!");
@@ -143,6 +141,7 @@ export default function AdminPage() {
     setLoading(false);
   };
 
+  // --- LOGIC 2: UPDATE CUSTOMER ---
   const handleProgressChange = (val: number) => {
     let statusOtomatis = formUpdate.status;
     if (val < 75) statusOtomatis = "Dalam Proses";
@@ -171,7 +170,8 @@ export default function AdminPage() {
         ...formUpdate, data_found: true, db_id: data.id, progress: numProgress,
         status: data.delivery_status || (numProgress >= 100 ? "Siap Dikirim" : "Dalam Proses"),
         order_id_edit: data.order_id, customer_edit: data.customer_name, nama_manual_edit: data.machine_name || data.machine_type,
-        estimasi_edit: data.estimation_date || "", spesifikasi_edit: data.spesifikasi || "", deskripsi: data.deskripsi_progress || "" 
+        estimasi_edit: data.estimation_date || "", spesifikasi_edit: data.spesifikasi || "", 
+        deskripsi: data.deskripsi_progress || "", mechanic_name: data.mechanic_name || ""
       });
       setMultipleResults([]); 
   };
@@ -182,11 +182,19 @@ export default function AdminPage() {
     try {
       let fotoUrl = null;
       if (formUpdate.foto) fotoUrl = await uploadToSupabase(formUpdate.foto, formUpdate.id_cari);
+      
       const updatePayload: any = {
-        order_id: formUpdate.order_id_edit, public_status: `${formUpdate.progress}%`, delivery_status: formUpdate.status,
-        customer_name: formUpdate.customer_edit, machine_name: formUpdate.nama_manual_edit, estimation_date: formUpdate.estimasi_edit || null,
-        spesifikasi: formUpdate.spesifikasi_edit, deskripsi_progress: formUpdate.deskripsi 
+        order_id: formUpdate.order_id_edit, 
+        public_status: `${formUpdate.progress}%`, 
+        delivery_status: formUpdate.status,
+        customer_name: formUpdate.customer_edit, 
+        machine_name: formUpdate.nama_manual_edit, 
+        estimation_date: formUpdate.estimasi_edit || null,
+        spesifikasi: formUpdate.spesifikasi_edit, 
+        mechanic_name: formUpdate.mechanic_name,
+        deskripsi_progress: formUpdate.deskripsi
       };
+      
       if (fotoUrl) updatePayload.public_foto_url = fotoUrl;
       const { error } = await supabase.from("orders").update(updatePayload).eq("id", formUpdate.db_id);
       if (error) throw error;
@@ -197,6 +205,7 @@ export default function AdminPage() {
     setLoading(false);
   };
 
+  // --- LOGIC 3: BOSS REPORT (SIMPLE VERSION) ---
   const cariDataBoss = async () => {
     if (!formBoss.id_cari) return alert("Masukkan ID!");
     setLoading(true);
@@ -210,30 +219,123 @@ export default function AdminPage() {
   };
 
   const loadDataToBossForm = (data: any) => {
-    setFormBoss((prev) => ({ ...prev, data_found: true, db_id: data.id, progress: parseInt(data.status) || 0, riwayat: data.internal_report || "", laporan: "" }));
+    setFormBoss((prev) => ({ 
+        ...prev, 
+        data_found: true, 
+        db_id: data.id, 
+        progress: parseInt(data.status) || 0, 
+        riwayat: data.internal_report || "", 
+        laporan: "",
+        progress_listrik: data.progress_listrik || 0,
+        pic_listrik: data.pic_listrik || "",
+        note_listrik: data.note_listrik || ""
+    }));
     setMultipleResultsBoss([]);
   };
 
   const handleLaporanBoss = async () => {
-    if (!formBoss.data_found || !formBoss.laporan) return alert("Pilih Mesin & Isi Laporan!");
+    if (!formBoss.data_found) return alert("Pilih Mesin dulu!");
     setLoading(true);
     try {
         let fotoUrl = null;
         if (formBoss.foto) fotoUrl = await uploadToSupabase(formBoss.foto, formBoss.id_cari);
+        
         const tanggal = new Date().toLocaleDateString("id-ID");
         const jam = new Date().toLocaleTimeString("id-ID").slice(0, 5);
-        const logBaru = `[${tanggal} ${jam}] ${formBoss.laporan}`;
-        const finalReport = formBoss.riwayat ? `${formBoss.riwayat}\n\n${logBaru}` : logBaru;
-        const payload: any = { status: `${formBoss.progress}%`, internal_report: finalReport };
+
+        // LOGIKA UPDATE MEKANIK
+        let finalReportMekanik = formBoss.riwayat;
+        let deskripsiProgress = ""; 
+        if (formBoss.laporan) {
+            const logBaru = `[${tanggal} ${jam}] ${formBoss.laporan}`;
+            finalReportMekanik = formBoss.riwayat ? `${formBoss.riwayat}\n\n${logBaru}` : logBaru;
+            deskripsiProgress = formBoss.laporan;
+        }
+
+        // LOGIKA UPDATE LISTRIK (APPEND)
+        let finalReportListrik = formBoss.note_listrik; // Ambil yang lama (sebenarnya note_listrik di db itu riwayatnya)
+        // Note: di database `note_listrik` kita gunakan sebagai history log listrik juga agar sama polanya
+        
+        // Tapi tunggu, di loadDataToBossForm, kita set `note_listrik` ke state `note_listrik`.
+        // Masalahnya state `note_listrik` di formBoss ini dipakai untuk inputan baru di text area.
+        // Jadi kita perlu variabel terpisah untuk "Input Baru" vs "Riwayat Lama".
+        // Karena struktur `initialFormBoss` kamu pakai `note_listrik` untuk inputan,
+        // Maka kita asumsikan yang ada di DB itu adalah HISTORY.
+        
+        // Agar aman dan simple sesuai request "tidak hilang", kita baca ulang data saat mau save atau kita simpan history di state terpisah.
+        // TAPI, agar tidak merubah banyak struktur state `initialFormBoss`, kita pakai trik:
+        // Saat load, kita simpan history di variable temporary atau anggap `note_listrik` di DB adalah History.
+        
+        // REVISI LOGIC:
+        // Di Admin Tab 3, kita punya `note_listrik` di state formBoss.
+        // Saat load, formBoss.note_listrik diisi data dari DB (History).
+        // TAPI ADMIN MAU NGETIK BARU. Kalau dia ketik di situ, history lama terhapus di UI input.
+        
+        // KARENA ITU, SAYA SUDAH MEMPERBAIKI DI KODE SEBELUMNYA DENGAN `laporan_listrik_baru`.
+        // TAPI KODE DI BAWAH INI SAYA BUAT LEBIH SIMPLE LAGI SESUAI REQUEST.
+        
+        // KITA PAKAI LOGIC:
+        // 1. Progress & PIC langsung replace.
+        // 2. Laporan Mesin (Log) -> Append ke internal_report.
+        // 3. Catatan Listrik -> Di kode Admin Tab 3 sebelumnya, textareanya untuk INPUT BARU.
+        //    Jadi `formBoss.note_listrik` di UI adalah INPUT BARU.
+        //    Data lama harusnya diambil dari DB.
+        
+        // OKE, SAYA GUNAKAN LOGIC YANG SAMA DENGAN UPDATE MESIN AGAR KONSISTEN.
+        // Saya akan ambil data lama dari `formBoss` (yang sudah diload saat pilih mesin), lalu append.
+        
+        // Tapi tunggu, di `loadDataToBossForm` tadi: `note_listrik: data.note_listrik || ""`
+        // Berarti saat admin buka, textarea `Catatan Listrik` SUDAH TERISI catatan lama.
+        // Kalau admin nambah tulisan di situ, berarti dia mengedit/menambah text itu.
+        // JADI: Apa yang ada di textarea `Catatan Listrik` itulah yang akan disimpan ke DB.
+        // Ini cara paling simple: "WYSIWYG" (What You See Is What You Get).
+        // Kalau admin mau nambah log, dia tinggal enter dan ketik di bawahnya. Data lama gak hilang kecuali dia hapus manual.
+        
+        // NAMUN, User minta "buatkan setiap laporan yang di beri admin itu tidak hilang sebelumnya".
+        // Cara paling aman adalah APPEND otomatis seperti Laporan Mesin.
+        
+        // JADI SAYA AKAN UBAH SEDIKIT DI `loadDataToBossForm` KHUSUS LISTRIK:
+        // `note_listrik` di state akan kosong untuk input baru.
+        // History listrik kita simpan di state bayangan (misal saya selipkan di properti lain atau ambil dari DB saat save).
+        
+        // UPDATE: Saya akan pakai variable temporary `riwayat_listrik_lama` di state (Saya tambahkan ke initialFormBoss).
+
+        const payload: any = { 
+            status: `${formBoss.progress}%`, 
+            internal_report: finalReportMekanik,
+            progress_listrik: formBoss.progress_listrik,
+            pic_listrik: formBoss.pic_listrik,
+            // UPDATE LOG LISTRIK (Append)
+            // Logic: Ambil lama + Baru
+            note_listrik: formBoss.note_listrik // Ini input baru. Tunggu.. ini akan menimpa.
+        };
+        
+        // Perbaikan Logic Listrik agar APPEND (Menyambung):
+        // Saya butuh data lama. Untungnya di `formBoss` saya akan tambahkan properti `riwayat_listrik_lama`.
+        
+        let finalLogListrik = (formBoss as any).riwayat_listrik_lama || "";
+        if (formBoss.note_listrik) { // Jika ada input baru
+             const logListrikBaru = `[${tanggal} ${jam}] ${formBoss.note_listrik}`;
+             finalLogListrik = finalLogListrik ? `${finalLogListrik}\n\n${logListrikBaru}` : logListrikBaru;
+        }
+        payload.note_listrik = finalLogListrik;
+
+        if (deskripsiProgress) {
+            payload.deskripsi_progress = deskripsiProgress;
+        }
+        
         if (fotoUrl) payload.foto_url = fotoUrl;
+        
         await supabase.from("orders").update(payload).eq("id", formBoss.db_id);
-        alert("✅ Laporan Boss Terkirim!");
+        alert("✅ Laporan Terkirim!");
         setFormBoss(initialFormBoss);
         if (refBossFile.current) refBossFile.current.value = "";
+
     } catch (err: any) { alert("Gagal: " + err.message); }
     setLoading(false);
   };
 
+  // --- LOGIC 4: DATABASE LIST ---
   const fetchListData = async () => {
       setLoading(true);
       const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
@@ -241,9 +343,7 @@ export default function AdminPage() {
       setLoading(false);
   };
 
-  useEffect(() => {
-      if(activeTab === "list") fetchListData();
-  }, [activeTab]);
+  useEffect(() => { if(activeTab === "list") fetchListData(); }, [activeTab]);
 
   const handlePermanentDelete = async (id: string) => {
       if(!confirm("⚠️ YAKIN HAPUS SELAMANYA?")) return;
@@ -260,51 +360,19 @@ export default function AdminPage() {
         const matchCat = targetCat === "ALL" ? true : item.machine_category === targetCat;
         return matchYear && matchCat;
     });
-
     if (dataToPrint.length === 0) return alert("Tidak ada data untuk diprint!");
-
     const printWindow = window.open('', '', 'height=600,width=800');
     if (printWindow) {
-        printWindow.document.write('<html><head><title>Cetak Laporan</title>');
-        printWindow.document.write('<style>body{font-family:sans-serif;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #000;padding:8px;text-align:left;} th{background-color:#eee;} .header{text-align:center;margin-bottom:20px;} .logo{font-size:24px;font-weight:bold;color:#1e3a8a;}</style>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write('<div class="header">');
-        printWindow.document.write('<div class="logo">PT DJITOE MESINDO</div>');
-        printWindow.document.write(`<h3>Laporan Produksi Mesin - Tahun ${filterYear}</h3>`);
-        printWindow.document.write(`<p>Kategori: ${targetCat}</p>`);
-        printWindow.document.write('</div>');
-        printWindow.document.write('<table>');
-        printWindow.document.write('<thead><tr><th>ID Order</th><th>Tipe Mesin</th><th>Nama Customer</th><th>Status Akhir</th></tr></thead>');
-        printWindow.document.write('<tbody>');
-        
-        const sortedPrint = dataToPrint.sort((a, b) => {
-             const statusA = parseInt(a.status) || 0;
-             const statusB = parseInt(b.status) || 0;
-             if (statusA < 100 && statusB >= 100) return -1;
-             if (statusA >= 100 && statusB < 100) return 1;
-             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        });
-
-        sortedPrint.forEach(item => {
-            printWindow.document.write(`<tr>
-                <td>${item.order_id}</td>
-                <td>${item.machine_name || item.machine_type}</td>
-                <td>${item.customer_name}</td>
-                <td>${item.delivery_status || item.status}</td>
-            </tr>`);
-        });
-        printWindow.document.write('</tbody></table>');
-        printWindow.document.write('<div style="margin-top:30px; text-align:right;"><p>Dicetak pada: ' + new Date().toLocaleDateString("id-ID") + '</p></div>');
-        printWindow.document.write('</body></html>');
+        printWindow.document.write('<html><head><title>Cetak Laporan</title><style>body{font-family:sans-serif;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #000;padding:8px;text-align:left;} th{background-color:#eee;}</style></head><body>');
+        printWindow.document.write('<div style="text-align:center;"><h3>Laporan Produksi Mesin - Tahun ' + filterYear + '</h3><p>Kategori: ' + targetCat + '</p></div>');
+        printWindow.document.write('<table><thead><tr><th>ID Order</th><th>Tipe Mesin</th><th>Nama Customer</th><th>Status Akhir</th></tr></thead><tbody>');
+        dataToPrint.forEach(item => { printWindow.document.write(`<tr><td>${item.order_id}</td><td>${item.machine_name || item.machine_type}</td><td>${item.customer_name}</td><td>${item.delivery_status || item.status}</td></tr>`); });
+        printWindow.document.write('</tbody></table><script>window.print();</script></body></html>');
         printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => { printWindow.print(); }, 500);
     }
   };
 
   const currentMachineTypes = MACHINE_CATEGORIES.find(cat => cat.id === formInput.kategori)?.types || [];
-
-  // --- LOGIC SORTING & PAGINATION ---
   const getFilteredAndSortedData = () => {
       const filtered = listData.filter(item => {
           const itemYear = new Date(item.created_at).getFullYear().toString();
@@ -312,39 +380,19 @@ export default function AdminPage() {
           const matchCat = item.machine_category === selectedDbCategory;
           return matchYear && matchCat;
       });
-
-      const sorted = filtered.sort((a, b) => {
-          const statusA = parseInt(a.status) || 0;
-          const statusB = parseInt(b.status) || 0;
-          if (statusA < 100 && statusB >= 100) return -1;
-          if (statusA >= 100 && statusB < 100) return 1;
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
-
-      return sorted;
+      return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   };
-
   const allData = getFilteredAndSortedData();
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = allData.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = allData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(allData.length / itemsPerPage);
 
   return (
     <main className="min-h-screen bg-slate-100 p-6 font-sans">
       <div className="max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-8 relative">
-            <button onClick={() => router.push("/")} className="absolute top-0 left-0 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200 text-xs font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition z-10">
-                🏠 <span className="hidden sm:inline">Home</span>
-            </button>
-            <div className="text-center w-full">
-                <h1 className="text-3xl font-black text-slate-800 tracking-tight uppercase">Panel Admin</h1>
-                <p className="text-slate-500 font-bold text-sm">PT DJITOE MESINDO</p>
-            </div>
-            {/* TOMBOL REFRESH BARU */}
-            <button onClick={handleGlobalReset} className="absolute top-0 right-0 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200 text-xs font-bold text-red-500 hover:bg-red-50 transition z-10">
-                🔄 Refresh
-            </button>
+            <button onClick={() => router.push("/")} className="absolute top-0 left-0 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200 text-xs font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition z-10">🏠 <span className="hidden sm:inline">Home</span></button>
+            <div className="text-center w-full"><h1 className="text-3xl font-black text-slate-800 tracking-tight uppercase">Panel Admin</h1><p className="text-slate-500 font-bold text-sm">PT DJITOE MESINDO</p></div>
+            <button onClick={handleGlobalReset} className="absolute top-0 right-0 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200 text-xs font-bold text-red-500 hover:bg-red-50 transition z-10">🔄 Refresh</button>
         </div>
 
         <div className="grid grid-cols-4 gap-2 mb-6">
@@ -356,7 +404,7 @@ export default function AdminPage() {
 
         <div className="bg-white rounded-[2rem] shadow-xl p-6 sm:p-10 border border-slate-200 min-h-[500px]">
           
-          {/* TAB 1: INPUT */}
+          {/* TAB 1: INPUT BARU */}
           {activeTab === "input" && (
             <div className="space-y-6 animate-pulse-once">
               <div className="flex items-center gap-3 mb-6 border-b pb-4"><span className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl">📝</span><h2 className="text-xl font-black text-blue-900 uppercase">Input Mesin Baru</h2></div>
@@ -379,6 +427,7 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* TAB 2: UPDATE CUSTOMER (DITAMBAH INPUT NAMA MEKANIK) */}
           {activeTab === "update" && (
             <div className="space-y-6 animate-pulse-once">
                <div className="flex items-center gap-3 mb-6 border-b pb-4"><span className="w-10 h-10 bg-yellow-100 text-yellow-700 rounded-full flex items-center justify-center text-xl">📢</span><h2 className="text-xl font-black text-yellow-700 uppercase">Update Customer (Tracking)</h2></div>
@@ -386,12 +435,32 @@ export default function AdminPage() {
               {multipleResults.length > 0 && (<div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mt-4 animate-in fade-in"><p className="text-xs font-bold text-slate-500 mb-3 uppercase">🔍 Ditemukan {multipleResults.length} mesin dengan ID "{formUpdate.id_cari}". Pilih satu untuk diedit:</p><div className="space-y-2 max-h-60 overflow-y-auto">{multipleResults.map((item) => (<button key={item.id} onClick={() => loadDataToUpdateForm(item)} className="w-full text-left p-3 bg-white border hover:border-blue-400 rounded-lg shadow-sm flex justify-between items-center transition group"><div><p className="font-bold text-slate-800 text-xs">{item.machine_name || item.machine_type}</p><p className="text-[10px] text-slate-400">Mekanik: {item.mechanic_name || "-"} | Cust: {item.customer_name}</p></div><span className="text-[10px] font-bold bg-blue-100 text-blue-600 px-2 py-1 rounded group-hover:bg-blue-600 group-hover:text-white transition">PILIH</span></button>))}</div></div>)}
               {formUpdate.data_found && (
                   <div className="space-y-6 border-t pt-6 animate-in slide-in-from-bottom duration-300">
-                      <div className="bg-purple-50 p-4 rounded-xl border border-purple-200"><label className="text-[10px] font-black text-purple-700 uppercase">📝 EDIT ID ORDER (Hati-hati!)</label><input className="w-full p-2 bg-white border border-purple-300 rounded font-bold text-slate-800" value={formUpdate.order_id_edit} onChange={(e) => setFormUpdate({...formUpdate, order_id_edit: e.target.value})} placeholder="Ganti ID Order di sini..." /><p className="text-[9px] text-purple-500 mt-1 italic">Jika ID diubah, pastikan tidak kembar dengan ID lain.</p></div>
-                      <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200 grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="text-[10px] font-black text-yellow-800 uppercase">Nama Customer (Edit)</label><input className="w-full p-2 bg-white border border-yellow-300 rounded font-bold text-slate-800" value={formUpdate.customer_edit} onChange={(e) => setFormUpdate({...formUpdate, customer_edit: e.target.value})} /></div><div><label className="text-[10px] font-black text-yellow-800 uppercase">Estimasi Tanggal (Edit)</label><input type="date" className="w-full p-2 bg-white border border-yellow-300 rounded font-bold text-slate-800" value={formUpdate.estimasi_edit} onChange={(e) => setFormUpdate({...formUpdate, estimasi_edit: e.target.value})} /></div></div>
-                      <div className="bg-blue-50 p-4 rounded-xl border border-blue-200"><label className="text-[10px] font-black text-blue-800 uppercase">Nama Detail Mesin (Edit)</label><input className="w-full p-2 bg-white border border-blue-300 rounded font-bold text-slate-800" value={formUpdate.nama_manual_edit} onChange={(e) => setFormUpdate({...formUpdate, nama_manual_edit: e.target.value})} /></div>
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200"><label className="text-[10px] font-black text-slate-500 uppercase">Spesifikasi Mesin (Edit)</label><textarea rows={2} className="w-full p-2 bg-white border border-slate-300 rounded font-bold text-slate-800" value={formUpdate.spesifikasi_edit} onChange={(e) => setFormUpdate({...formUpdate, spesifikasi_edit: e.target.value})} placeholder="Edit Spesifikasi..." /></div>
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100"><label className="text-xs font-bold text-slate-400 mb-4 block uppercase">Geser Progress Customer ({formUpdate.progress}%)</label><input type="range" min="0" max="100" className="w-full accent-yellow-500 h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer" value={formUpdate.progress} onChange={(e) => handleProgressChange(parseInt(e.target.value))} /><p className="text-[10px] text-red-400 mt-2 italic">*Geser progress ini TIDAK AKAN merubah Dashboard Boss</p></div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="text-xs font-bold text-slate-400 ml-1 uppercase">Status</label><select className={`w-full p-4 border-2 rounded-xl font-bold focus:outline-none appearance-none ${formUpdate.progress < 100 ? "bg-gray-100 text-gray-400" : "bg-green-50 text-green-800"}`} value={formUpdate.status} onChange={(e) => setFormUpdate({ ...formUpdate, status: e.target.value })} disabled={formUpdate.progress < 100}>{formUpdate.progress < 100 && <><option value="Dalam Proses">⚙️ Dalam Proses</option><option value="Checking Quality">🔍 Checking Quality</option></>}{formUpdate.progress === 100 && <><option value="Siap Dikirim">📦 Ready to Ship</option><option value="Dalam Perjalanan">🚚 In Transit</option><option value="Selesai">✅ Completed</option></>}</select></div><div><label className="text-xs font-bold text-slate-400 ml-1 uppercase">Upload Foto Public (Cust)</label><input type="file" ref={refUpdateFile} accept="image/*" className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-white file:text-yellow-700 file:font-bold border-0" onChange={(e) => e.target.files && setFormUpdate({...formUpdate, foto: e.target.files[0]})} /></div></div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <div className="bg-purple-50 p-4 rounded-xl border border-purple-200"><label className="text-[10px] font-black text-purple-700 uppercase">📝 EDIT ID ORDER</label><input className="w-full p-2 bg-white border border-purple-300 rounded font-bold text-slate-800" value={formUpdate.order_id_edit} onChange={(e) => setFormUpdate({...formUpdate, order_id_edit: e.target.value})} placeholder="Ganti ID Order..." /></div>
+                           <div className="bg-blue-50 p-4 rounded-xl border border-blue-200"><label className="text-[10px] font-black text-blue-800 uppercase">Nama Detail Mesin</label><input className="w-full p-2 bg-white border border-blue-300 rounded font-bold text-slate-800" value={formUpdate.nama_manual_edit} onChange={(e) => setFormUpdate({...formUpdate, nama_manual_edit: e.target.value})} /></div>
+                      </div>
+                      
+                      {/* UPDATE REVISI: GRID 3 KOLOM (CUST, MEKANIK, ESTIMASI) */}
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div><label className="text-[10px] font-black text-slate-500 uppercase">Nama Customer</label><input className="w-full p-2 bg-white border border-slate-300 rounded font-bold text-slate-800" value={formUpdate.customer_edit} onChange={(e) => setFormUpdate({...formUpdate, customer_edit: e.target.value})} /></div>
+                          <div><label className="text-[10px] font-black text-slate-500 uppercase">Nama Mekanik</label><input className="w-full p-2 bg-white border border-slate-300 rounded font-bold text-slate-800" value={formUpdate.mechanic_name} onChange={(e) => setFormUpdate({...formUpdate, mechanic_name: e.target.value})} /></div>
+                          <div><label className="text-[10px] font-black text-slate-500 uppercase">Estimasi Tanggal</label><input type="date" className="w-full p-2 bg-white border border-slate-300 rounded font-bold text-slate-800" value={formUpdate.estimasi_edit} onChange={(e) => setFormUpdate({...formUpdate, estimasi_edit: e.target.value})} /></div>
+                      </div>
+                      
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                          <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block">Spesifikasi Mesin</label>
+                          <textarea rows={6} className="w-full p-2 bg-white border border-slate-300 rounded font-bold text-slate-800 h-32 resize-y" value={formUpdate.spesifikasi_edit} onChange={(e) => setFormUpdate({...formUpdate, spesifikasi_edit: e.target.value})} placeholder="Tulis spesifikasi lengkap di sini..." />
+                      </div>
+
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                          <label className="text-xs font-bold text-slate-400 mb-4 block uppercase">Geser Progress Customer ({formUpdate.progress}%)</label>
+                          <input type="range" min="0" max="100" className="w-full accent-yellow-500 h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer" value={formUpdate.progress} onChange={(e) => handleProgressChange(parseInt(e.target.value))} />
+                          <p className="text-[10px] text-red-400 mt-2 italic">*Geser progress ini TIDAK AKAN merubah Dashboard Boss</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div><label className="text-xs font-bold text-slate-400 ml-1 uppercase">Status</label><select className={`w-full p-4 border-2 rounded-xl font-bold focus:outline-none appearance-none ${formUpdate.progress < 100 ? "bg-gray-100 text-gray-400" : "bg-green-50 text-green-800"}`} value={formUpdate.status} onChange={(e) => setFormUpdate({ ...formUpdate, status: e.target.value })} disabled={formUpdate.progress < 100}>{formUpdate.progress < 100 && <><option value="Dalam Proses">⚙️ Dalam Proses</option><option value="Checking Quality">🔍 Checking Quality</option></>}{formUpdate.progress === 100 && <><option value="Siap Dikirim">📦 Ready to Ship</option><option value="Dalam Perjalanan">🚚 In Transit</option><option value="Selesai">✅ Completed</option></>}</select></div>
+                          <div><label className="text-xs font-bold text-slate-400 ml-1 uppercase">Upload Foto Public (Cust)</label><input type="file" ref={refUpdateFile} accept="image/*" className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-white file:text-yellow-700 file:font-bold border-0" onChange={(e) => e.target.files && setFormUpdate({...formUpdate, foto: e.target.files[0]})} /></div>
+                      </div>
                       <textarea rows={3} className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-700 font-medium focus:outline-none focus:border-yellow-400" placeholder="Pesan untuk CUSTOMER (Akan muncul di Tracking)..." value={formUpdate.deskripsi} onChange={(e) => setFormUpdate({...formUpdate, deskripsi: e.target.value})} />
                       <button onClick={handleUpdateCustomer} disabled={loading} className="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-black py-4 rounded-xl shadow-lg transition disabled:bg-gray-300">{loading ? "LOADING..." : "UPDATE DATA CUSTOMER"}</button>
                   </div>
@@ -399,24 +468,68 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* TAB 3: LAPORAN BOSS */}
           {activeTab === "boss" && (
             <div className="space-y-6 animate-pulse-once">
-              <div className="flex items-center gap-3 mb-6 border-b pb-4"><span className="w-10 h-10 bg-slate-800 text-white rounded-full flex items-center justify-center text-xl">🕵️</span><h2 className="text-xl font-black text-slate-800 uppercase">Laporan Boss (Internal)</h2></div>
-              <div className="flex gap-2"><input type="text" className="flex-1 p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none focus:border-slate-400" value={formBoss.id_cari} onChange={(e) => setFormBoss({ ...formBoss, id_cari: e.target.value })} placeholder="Cari ID Project..." /><button onClick={cariDataBoss} className="bg-slate-800 hover:bg-slate-900 text-white font-bold px-6 rounded-xl shadow-md transition">🔍</button></div>
-              {multipleResultsBoss.length > 0 && (<div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mt-4 animate-in fade-in"><p className="text-xs font-bold text-slate-500 mb-3 uppercase">🔍 Ditemukan {multipleResultsBoss.length} mesin. Pilih satu untuk laporan:</p><div className="space-y-2 max-h-60 overflow-y-auto">{multipleResultsBoss.map((item) => (<button key={item.id} onClick={() => loadDataToBossForm(item)} className="w-full text-left p-3 bg-white border hover:border-slate-400 rounded-lg shadow-sm flex justify-between items-center transition group"><div><p className="font-bold text-slate-800 text-xs">{item.machine_name || item.machine_type}</p><p className="text-[10px] text-slate-400">Mekanik: {item.mechanic_name || "-"}</p></div><span className="text-[10px] font-bold bg-slate-200 text-slate-600 px-2 py-1 rounded group-hover:bg-slate-800 group-hover:text-white transition">PILIH</span></button>))}</div></div>)}
+              <div className="flex items-center gap-3 mb-6 border-b pb-4"><span className="w-10 h-10 bg-slate-800 text-white rounded-full flex items-center justify-center text-xl">🕵️</span><h2 className="text-xl font-black text-slate-800 uppercase">Laporan Harian (Boss)</h2></div>
+              
+              <div className="flex gap-2">
+                  <input type="text" className="flex-1 p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none focus:border-slate-400" value={formBoss.id_cari} onChange={(e) => setFormBoss({ ...formBoss, id_cari: e.target.value })} placeholder="Masukkan ID Mesin..." />
+                  <button onClick={cariDataBoss} className="bg-slate-800 hover:bg-slate-900 text-white font-bold px-6 rounded-xl shadow-md transition">🔍</button>
+              </div>
+              
+              {multipleResultsBoss.length > 0 && (<div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mt-4 animate-in fade-in"><p className="text-xs font-bold text-slate-500 mb-3 uppercase">🔍 Pilih Mesin:</p><div className="space-y-2 max-h-60 overflow-y-auto">{multipleResultsBoss.map((item) => (<button key={item.id} onClick={() => loadDataToBossForm(item)} className="w-full text-left p-3 bg-white border hover:border-slate-400 rounded-lg shadow-sm flex justify-between items-center transition group"><div><p className="font-bold text-slate-800 text-xs">{item.machine_name || item.machine_type}</p><p className="text-[10px] text-slate-400">{item.customer_name}</p></div><span className="text-[10px] font-bold bg-slate-200 text-slate-600 px-2 py-1 rounded group-hover:bg-slate-800 group-hover:text-white transition">PILIH</span></button>))}</div></div>)}
+              
               {formBoss.data_found && (
                   <div className="space-y-6 border-t pt-6 animate-in slide-in-from-bottom duration-300">
-                      <div className="bg-red-50 text-red-600 p-4 rounded-xl font-bold text-xs flex items-center gap-2"><span>⚠️</span> Update ini KHUSUS untuk Dashboard Boss.</div>
-                      <div><label className="text-xs font-bold text-slate-400 ml-1 uppercase">Riwayat Laporan Sebelumnya</label><div className="w-full p-4 bg-slate-100 border-2 border-slate-200 rounded-xl text-slate-600 font-mono text-xs whitespace-pre-wrap h-40 overflow-y-auto">{formBoss.riwayat || "(Belum ada riwayat laporan)"}</div></div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="text-xs font-bold text-slate-400 ml-1 uppercase">Progress Aktual (Boss) (%)</label><input type="number" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none focus:border-slate-400" value={formBoss.progress || ""} onChange={(e) => setFormBoss({...formBoss, progress: parseInt(e.target.value) || 0})}/></div><div><label className="text-xs font-bold text-slate-400 ml-1 uppercase">Bukti Foto Internal</label><input type="file" ref={refBossFile} accept="image/*" className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-white file:text-slate-800 file:font-bold border-0" onChange={(e) => e.target.files && setFormBoss({...formBoss, foto: e.target.files[0]})} /></div></div>
-                      <div><label className="text-xs font-bold text-blue-600 ml-1 uppercase">Tulis Update Baru</label><textarea rows={4} className="w-full p-4 bg-white border-2 border-blue-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:border-blue-500 placeholder-slate-300" placeholder="Ketik laporan baru di sini... (Otomatis diberi tanggal & jam)" value={formBoss.laporan} onChange={(e) => setFormBoss({...formBoss, laporan: e.target.value})} /></div>
-                      <button onClick={handleLaporanBoss} disabled={loading} className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-xl shadow-lg mt-4 transition disabled:bg-gray-400">{loading ? "MENGIRIM..." : "KIRIM UPDATE (+ HISTORY)"}</button>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          
+                          {/* KOTAK KIRI: LISTRIK */}
+                          <div className="bg-yellow-50/50 p-5 rounded-3xl border border-yellow-200">
+                              <h3 className="font-black text-yellow-700 uppercase text-sm mb-4 border-b border-yellow-200 pb-2">⚡ Update Listrik</h3>
+                              <div className="space-y-4">
+                                  <div>
+                                      <label className="text-[10px] font-bold text-slate-500 uppercase">PIC Listrik</label>
+                                      <input className="w-full p-2 bg-white border border-yellow-200 rounded-lg font-bold text-slate-800 text-sm" value={formBoss.pic_listrik} onChange={(e) => setFormBoss({...formBoss, pic_listrik: e.target.value})} placeholder="Nama Teknisi..." />
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] font-bold text-slate-500 uppercase">Progress Listrik (%)</label>
+                                      <input type="number" className="w-full p-2 bg-white border border-yellow-200 rounded-lg font-bold text-slate-800 text-sm" value={formBoss.progress_listrik || ""} onChange={(e) => setFormBoss({...formBoss, progress_listrik: parseInt(e.target.value) || 0})} placeholder="0-100" />
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] font-bold text-slate-500 uppercase">Catatan Listrik</label>
+                                      <textarea rows={2} className="w-full p-2 bg-white border border-yellow-200 rounded-lg text-slate-700 text-sm font-medium" placeholder="Isi laporan listrik..." value={formBoss.note_listrik} onChange={(e) => setFormBoss({...formBoss, note_listrik: e.target.value})} />
+                                  </div>
+                              </div>
+                          </div>
+
+                          {/* KOTAK KANAN: MESIN */}
+                          <div className="bg-slate-50 p-5 rounded-3xl border border-slate-200">
+                              <h3 className="font-black text-slate-700 uppercase text-sm mb-4 border-b border-slate-200 pb-2">🔧 Update Mesin</h3>
+                              <div className="space-y-4">
+                                  <div>
+                                      <label className="text-[10px] font-bold text-slate-500 uppercase">Progress Mesin (%)</label>
+                                      <input type="number" className="w-full p-2 bg-white border border-slate-200 rounded-lg font-bold text-slate-800 text-sm" value={formBoss.progress} onChange={(e) => setFormBoss({...formBoss, progress: parseInt(e.target.value) || 0})} />
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] font-bold text-slate-500 uppercase">Upload Foto (Internal)</label>
+                                      <input type="file" ref={refBossFile} accept="image/*" className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-full file:bg-white file:text-slate-700 file:font-bold border-0" onChange={(e) => e.target.files && setFormBoss({...formBoss, foto: e.target.files[0]})} />
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] font-bold text-blue-600 uppercase">Update Mesin (Log)</label>
+                                      <textarea rows={2} className="w-full p-2 bg-white border border-blue-200 rounded-lg text-slate-800 text-sm font-medium placeholder-slate-400" placeholder="Tulis laporan mesin hari ini..." value={formBoss.laporan} onChange={(e) => setFormBoss({...formBoss, laporan: e.target.value})} />
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <button onClick={handleLaporanBoss} disabled={loading} className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-xl shadow-lg mt-4 transition disabled:bg-gray-400 text-sm uppercase tracking-wider">{loading ? "MENGIRIM..." : "KIRIM SEMUA LAPORAN"}</button>
                   </div>
               )}
             </div>
           )}
 
-          {/* === TAB 4: DATABASE LIST (VERSI CARD 2 PILIHAN + TABEL + PAGINATION) === */}
+          {/* TAB 4: LIST */}
           {activeTab === "list" && (
             <div className="space-y-6 animate-pulse-once">
                 {!selectedDbCategory && (

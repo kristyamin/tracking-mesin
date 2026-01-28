@@ -22,13 +22,16 @@ const TRANSLATIONS = {
     emptyFolder: "📂 Tidak ada data ditemukan.",
     detailTitle: "Detail Produksi",
     mechanic: "Mekanik",
+    electrical: "Electrical",
     estimation: "Estimasi Selesai",
     notSet: "Belum Ditentukan",
     specTitle: "⚙️ Spesifikasi Mesin",
     noSpec: "Belum ada data spesifikasi.",
     reportTitle: "Laporan Internal",
-    lastUpdate: "Terakhir Update:",
-    noReport: "Belum ada laporan internal dari Admin."
+    lastUpdate: "TERAKHIR UPDATE:",
+    noReport: "Belum ada laporan internal.",
+    btnMechanic: "Laporan Mekanik",
+    btnElectric: "Laporan Electrical",
   },
   EN: {
     title: "Production Monitoring",
@@ -46,13 +49,16 @@ const TRANSLATIONS = {
     emptyFolder: "📂 No data found.",
     detailTitle: "Production Details",
     mechanic: "Mechanic",
+    electrical: "Electrical",
     estimation: "Est. Completion",
     notSet: "Not Set",
     specTitle: "⚙️ Machine Specs",
     noSpec: "No specification data available.",
     reportTitle: "Internal Report",
-    lastUpdate: "Last Update:",
-    noReport: "No internal report from Admin yet."
+    lastUpdate: "LAST UPDATE:",
+    noReport: "No internal report.",
+    btnMechanic: "Mechanic Report",
+    btnElectric: "Electrical Report",
   }
 };
 
@@ -78,10 +84,7 @@ export default function DashboardBos() {
   const [loading, setLoading] = useState(true);
   
   // === STATE BAHASA (Default ID) ===
-  // Tipe data 'ID' | 'EN' dipaksa agar TypeScript tidak bingung
   const [lang, setLang] = useState<"ID" | "EN">("ID"); 
-  
-  // Shortcut untuk ambil teks sesuai bahasa (t.title, t.mechanic, dll)
   const t = TRANSLATIONS[lang]; 
 
   // === SATPAM ===
@@ -94,6 +97,9 @@ export default function DashboardBos() {
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null); 
   const [activeOrder, setActiveOrder] = useState<any>(null); 
+  
+  // STATE TAB LAPORAN (null = hidden, 'MECHANIC', 'ELECTRIC')
+  const [reportTab, setReportTab] = useState<"MECHANIC" | "ELECTRIC" | null>(null);
 
   // === FILTER & SEARCH ===
   const currentYearReal = new Date().getFullYear();
@@ -112,6 +118,11 @@ export default function DashboardBos() {
 
   useEffect(() => { fetchOrders(); }, []);
 
+  // Reset tab saat ganti order
+  useEffect(() => {
+    if (!activeOrder) setReportTab(null);
+  }, [activeOrder]);
+
   const handleRefresh = () => {
       setSearchTerm("");
       setSelectedYear(currentYearReal.toString());
@@ -119,7 +130,7 @@ export default function DashboardBos() {
       fetchOrders();
   };
 
-  // === LOGIC FILTER (BILINGUAL SUPPORT) ===
+  // === LOGIC FILTER ===
   const filteredData = orders.filter((item) => {
     const date = new Date(item.created_at);
     const isYearMatch = date.getFullYear().toString() === selectedYear;
@@ -131,10 +142,13 @@ export default function DashboardBos() {
         (item.mechanic_name && item.mechanic_name.toLowerCase().includes(term))
     );
 
-    // Logic Spesial: Support "Selesai" (Indo) & "Done"/"Finished" (Inggris)
+    // LOGIC SPESIAL "SELESAI" / "DONE"
+    // Syarat: Mekanik 100% DAN Listrik 100%
     let isStatusDone = false;
     if (term === 'selesai' || term === 'done' || term === 'finished') {
-        if (parseInt(item.status) >= 100) isStatusDone = true;
+        const mechProg = parseInt(item.status) || 0; // Mengambil dari status persen admin
+        const elecProg = item.progress_listrik || 0;
+        if (mechProg >= 100 && elecProg >= 100) isStatusDone = true;
     }
 
     return isYearMatch && (isTextMatch || isStatusDone);
@@ -142,7 +156,7 @@ export default function DashboardBos() {
 
   const filteredListByType = filteredData.filter((item) => item.machine_type === selectedType);
 
-  // === GROUPING & SORTING (100% DI BAWAH) ===
+  // === GROUPING & SORTING ===
   const groupedOrders: { [key: string]: any[] } = {};
   filteredListByType.forEach(item => {
      if (!groupedOrders[item.order_id]) groupedOrders[item.order_id] = [];
@@ -152,8 +166,9 @@ export default function DashboardBos() {
   const sortedGroupKeys = Object.keys(groupedOrders).sort((a, b) => {
       const itemsA = groupedOrders[a];
       const itemsB = groupedOrders[b];
-      const isAllDoneA = itemsA.every((item) => (parseInt(item.status) || 0) >= 100);
-      const isAllDoneB = itemsB.every((item) => (parseInt(item.status) || 0) >= 100);
+      // Cek Done jika kedua progress 100
+      const isAllDoneA = itemsA.every((item) => (parseInt(item.status)||0) >= 100 && (item.progress_listrik||0) >= 100);
+      const isAllDoneB = itemsB.every((item) => (parseInt(item.status)||0) >= 100 && (item.progress_listrik||0) >= 100);
 
       if (!isAllDoneA && isAllDoneB) return -1; 
       if (isAllDoneA && !isAllDoneB) return 1;  
@@ -174,28 +189,19 @@ export default function DashboardBos() {
               <h1 className="text-xl md:text-2xl font-black uppercase tracking-tight">{t.title}</h1>
               <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">{t.subtitle}</p>
             </div>
-            
-            {/* TOMBOL GANTI BAHASA & NAVIGASI */}
             <div className="flex flex-wrap gap-2 justify-center">
-               {/* SWITCH BAHASA */}
                <div className="bg-slate-100 p-1 rounded-full flex items-center border border-slate-200">
                    <button onClick={() => setLang("ID")} className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'ID' ? 'bg-white shadow text-slate-900' : 'text-slate-400'}`}>ID 🇮🇩</button>
                    <button onClick={() => setLang("EN")} className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'EN' ? 'bg-white shadow text-slate-900' : 'text-slate-400'}`}>EN 🇬🇧</button>
                </div>
-
-               <button onClick={handleRefresh} className="bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-bold text-xs uppercase hover:bg-blue-100 transition-colors">
-                   {t.refresh}
-               </button>
+               <button onClick={handleRefresh} className="bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-bold text-xs uppercase hover:bg-blue-100 transition-colors">{t.refresh}</button>
                {selectedType ? (
                    <button onClick={() => setSelectedType(null)} className="bg-slate-100 text-slate-600 px-4 py-2 rounded-full font-bold text-xs uppercase hover:bg-slate-200 transition-colors">{t.back}</button>
                ) : (
-                   <button onClick={() => router.push("/")} className="bg-slate-100 text-slate-600 px-4 py-2 rounded-full font-bold text-xs uppercase hover:bg-slate-200 transition-colors">
-                       {t.home}
-                   </button>
+                   <button onClick={() => router.push("/")} className="bg-slate-100 text-slate-600 px-4 py-2 rounded-full font-bold text-xs uppercase hover:bg-slate-200 transition-colors">{t.home}</button>
                )}
             </div>
           </div>
-
           <div className="flex flex-col md:flex-row justify-end items-center gap-3">
             <div className="relative w-full md:w-64">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
@@ -216,12 +222,9 @@ export default function DashboardBos() {
             <div className="space-y-8 animate-in fade-in duration-500">
                 {searchTerm && (
                     <div className="text-center mb-4">
-                        <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">
-                            {t.searchResult} "{searchTerm}"
-                        </span>
+                        <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">{t.searchResult} "{searchTerm}"</span>
                     </div>
                 )}
-
                 {MACHINE_CATEGORIES.map((cat) => (
                     <div key={cat.id}>
                         <div className="flex items-center mb-4">
@@ -253,7 +256,7 @@ export default function DashboardBos() {
             </div>
         )}
 
-        {/* === VIEW 2: LIST ORDER === */}
+        {/* === VIEW 2: LIST ORDER (UPDATE: 2 PIC & 2 PROGRESS) === */}
         {selectedType && (
              <div className="space-y-6 animate-in slide-in-from-right duration-300">
                 <div className="flex items-center gap-2 mb-2">
@@ -262,9 +265,7 @@ export default function DashboardBos() {
                 </div>
 
                 {sortedGroupKeys.length === 0 ? (
-                    <div className="text-center p-20 text-slate-400 font-bold border-2 border-dashed rounded-[2rem] bg-white">
-                        {t.emptyFolder}
-                    </div>
+                    <div className="text-center p-20 text-slate-400 font-bold border-2 border-dashed rounded-[2rem] bg-white">{t.emptyFolder}</div>
                 ) : (
                     sortedGroupKeys.map((orderId) => {
                         const itemsRaw = groupedOrders[orderId];
@@ -276,7 +277,8 @@ export default function DashboardBos() {
                             return 0;
                         });
                         const firstItem = itemsSorted[0];
-                        const isGroupFullDone = itemsSorted.every((i: any) => (parseInt(i.status) || 0) >= 100);
+                        // Logic Full Done: Mekanik 100% & Listrik 100%
+                        const isGroupFullDone = itemsSorted.every((i: any) => (parseInt(i.status) || 0) >= 100 && (i.progress_listrik || 0) >= 100);
                         
                         return (
                             <div key={orderId} className={`bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden transition-all
@@ -294,14 +296,15 @@ export default function DashboardBos() {
 
                                 <div className="p-2">
                                     {itemsSorted.map((item: any, index: number) => {
-                                        const isDone = parseInt(item.status) >= 100;
+                                        // Done per item
+                                        const isDone = (parseInt(item.status) >= 100) && ((item.progress_listrik || 0) >= 100);
                                         return (
                                             <div key={item.id} onClick={() => setActiveOrder(item)} 
-                                                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-colors group mb-1 last:mb-0 border border-transparent 
+                                                className={`flex flex-col md:flex-row items-start md:items-center justify-between p-3 rounded-xl cursor-pointer transition-colors group mb-1 last:mb-0 border border-transparent 
                                                 ${isDone ? 'bg-slate-50/50 hover:bg-slate-100' : 'hover:bg-blue-50 hover:border-blue-100'}`}>
                                                 
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black 
+                                                <div className="flex items-center gap-3 w-full md:w-auto">
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 
                                                         ${isDone ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
                                                         {isDone ? '✓' : index + 1}
                                                     </div>
@@ -309,13 +312,27 @@ export default function DashboardBos() {
                                                         <p className={`text-xs font-black uppercase ${isDone ? 'text-slate-400' : 'text-slate-700'}`}>
                                                             {item.machine_name || item.machine_type}
                                                         </p>
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">{t.mechanic}: {item.mechanic_name || "-"}</p>
+                                                        {/* UPDATE: TAMPILKAN MEKANIK & LISTRIK */}
+                                                        <div className="flex flex-col gap-0.5 mt-1">
+                                                            <p className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                                                                <span>🔧</span> {item.mechanic_name || "-"}
+                                                            </p>
+                                                            <p className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                                                                <span>⚡</span> {item.pic_listrik || "-"}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                <div className="text-right">
-                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${isDone ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-600'}`}>
-                                                        {item.status}
+                                                {/* UPDATE: 2 PROGRESS BAR / BADGE */}
+                                                <div className="flex gap-2 mt-2 md:mt-0 w-full md:w-auto justify-end">
+                                                    <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase flex items-center gap-1
+                                                        ${parseInt(item.status) >= 100 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-600'}`}>
+                                                        🔧 {item.status || "0%"}
+                                                    </span>
+                                                    <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase flex items-center gap-1
+                                                        ${(item.progress_listrik || 0) >= 100 ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                        ⚡ {item.progress_listrik || 0}%
                                                     </span>
                                                 </div>
                                             </div>
@@ -354,15 +371,21 @@ export default function DashboardBos() {
                </div>
             </div>
 
-            <div className="p-6 max-w-3xl mx-auto -mt-6 relative z-10">
-               <div className="bg-white p-6 rounded-[2rem] shadow-lg mb-6 grid grid-cols-2 gap-6">
+            <div className="p-6 max-w-4xl mx-auto -mt-6 relative z-10">
+               
+               {/* 1. INFO PIC LENGKAP (3 KOLOM) */}
+               <div className="bg-white p-6 rounded-[2rem] shadow-lg mb-6 grid grid-cols-3 gap-6 text-center divide-x divide-slate-100">
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase">{t.mechanic}</label>
-                    <p className="font-bold text-slate-800">{activeOrder.mechanic_name || "-"}</p>
+                    <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">{t.mechanic}</label>
+                    <p className="font-bold text-slate-800 text-sm">{activeOrder.mechanic_name || "-"}</p>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase">{t.estimation}</label>
-                    <p className="font-bold text-slate-800">
+                    <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">{t.electrical}</label>
+                    <p className="font-bold text-slate-800 text-sm">{activeOrder.pic_listrik || t.notSet}</p>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">{t.estimation}</label>
+                    <p className="font-bold text-slate-800 text-sm">
                         {activeOrder.estimation_date 
                             ? new Date(activeOrder.estimation_date).toLocaleDateString(lang === "ID" ? "id-ID" : "en-US", { dateStyle: 'long' })
                             : t.notSet}
@@ -370,7 +393,7 @@ export default function DashboardBos() {
                   </div>
                </div>
 
-               {/* SPESIFIKASI MESIN */}
+               {/* 2. SPESIFIKASI */}
                <div className="bg-blue-50 p-6 rounded-[2rem] border border-blue-100 shadow-sm mb-6">
                    <h3 className="font-black text-blue-600 uppercase text-sm mb-2 flex items-center gap-2">
                        {t.specTitle}
@@ -380,33 +403,90 @@ export default function DashboardBos() {
                    </p>
                </div>
 
-               {/* LAPORAN INTERNAL */}
-               <div className="space-y-6">
-                  <h3 className="font-black text-slate-800 uppercase text-sm pl-2 border-l-4 border-yellow-500">{t.reportTitle}</h3>
-                  <div className="relative border-l-2 border-slate-200 ml-4 space-y-8 pb-4">
-                      <div className="relative pl-8 group">
-                          <div className="absolute -left-[9px] top-1 w-4 h-4 bg-yellow-400 border-4 border-yellow-100 rounded-full shadow-sm"></div>
-                          <div className="bg-yellow-50 p-6 rounded-2xl shadow-sm border border-yellow-200">
-                            <div className="flex justify-between items-center mb-4 border-b border-yellow-200 pb-2">
-                                <span className="text-[10px] font-black text-yellow-800 uppercase tracking-widest">
-                                    {t.lastUpdate} {new Date(activeOrder.created_at).toLocaleDateString(lang === "ID" ? "id-ID" : "en-US")}
-                                </span>
-                                <span className="bg-white text-yellow-800 px-3 py-1 rounded-lg text-[10px] font-black border border-yellow-200">
-                                    {activeOrder.status}
-                                </span>
-                            </div>
-                            {activeOrder.internal_report ? (
-                                <p className="text-slate-800 font-bold leading-relaxed text-sm whitespace-pre-wrap">
-                                   {activeOrder.internal_report}
-                                </p>
-                            ) : (
-                                <div className="text-center py-4 text-slate-400 italic text-xs">
-                                    {t.noReport}
-                                </div>
-                            )}
-                          </div>
-                      </div>
+               {/* 3. LAPORAN DENGAN TOMBOL (AWALNYA HILANG, DIKLIK MUNCUL) */}
+               <div>
+                  <div className="flex items-center gap-2 mb-4">
+                      <div className="h-6 w-1 bg-slate-800 rounded-full"></div>
+                      <h3 className="font-black text-slate-800 uppercase text-sm">{t.reportTitle}</h3>
                   </div>
+
+                  {/* TOMBOL PILIHAN */}
+                  <div className="flex gap-0 border border-slate-300 rounded-xl overflow-hidden mb-6 bg-white">
+                      <button 
+                        onClick={() => setReportTab(reportTab === 'MECHANIC' ? null : 'MECHANIC')}
+                        className={`flex-1 py-4 font-bold text-xs uppercase transition-all border-r border-slate-200
+                        ${reportTab === 'MECHANIC' ? 'bg-slate-100 text-slate-900 inner-shadow' : 'text-slate-400 hover:bg-slate-50'}`}>
+                        {t.btnMechanic}
+                      </button>
+                      <button 
+                        onClick={() => setReportTab(reportTab === 'ELECTRIC' ? null : 'ELECTRIC')}
+                        className={`flex-1 py-4 font-bold text-xs uppercase transition-all
+                        ${reportTab === 'ELECTRIC' ? 'bg-slate-100 text-slate-900 inner-shadow' : 'text-slate-400 hover:bg-slate-50'}`}>
+                        {t.btnElectric}
+                      </button>
+                  </div>
+
+                  {/* AREA KONTEN LAPORAN (MUNCUL JIKA DIKLIK) */}
+                  {reportTab && (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                          
+                          {/* LAPORAN MEKANIK (KARTU KUNING - DESIGN LAMA) */}
+                          {reportTab === 'MECHANIC' && (
+                              <div className="relative pl-6 group">
+                                  <div className="absolute -left-[7px] top-1 w-4 h-4 bg-yellow-400 border-4 border-white rounded-full shadow-sm z-10"></div>
+                                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-slate-200"></div>
+                                  
+                                  <div className="bg-[#FFFBEB] p-6 rounded-2xl border border-yellow-200 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4 border-b border-yellow-200 pb-3">
+                                        <span className="text-[10px] font-black text-yellow-800 uppercase tracking-widest">
+                                            {t.lastUpdate} {new Date(activeOrder.created_at).toLocaleDateString(lang === "ID" ? "id-ID" : "en-US")}
+                                        </span>
+                                        <span className="bg-white text-yellow-800 px-3 py-1 rounded-lg text-[10px] font-black border border-yellow-200 shadow-sm">
+                                            {activeOrder.status || "0%"}
+                                        </span>
+                                    </div>
+                                    {/* ISI LAPORAN MEKANIK (HISTORY LOG) */}
+                                    {activeOrder.internal_report ? (
+                                        <p className="text-slate-800 font-bold leading-relaxed text-sm whitespace-pre-wrap">
+                                            {activeOrder.internal_report}
+                                        </p>
+                                    ) : (
+                                        <div className="text-center py-4 text-slate-400 italic text-xs">{t.noReport}</div>
+                                    )}
+                                  </div>
+                              </div>
+                          )}
+
+                          {/* LAPORAN ELECTRICAL (KARTU BIRU - BIAR BEDA) */}
+                          {reportTab === 'ELECTRIC' && (
+                              <div className="relative pl-6 group">
+                                  <div className="absolute -left-[7px] top-1 w-4 h-4 bg-blue-400 border-4 border-white rounded-full shadow-sm z-10"></div>
+                                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-slate-200"></div>
+
+                                  <div className="bg-[#EFF6FF] p-6 rounded-2xl border border-blue-200 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4 border-b border-blue-200 pb-3">
+                                        <span className="text-[10px] font-black text-blue-800 uppercase tracking-widest">
+                                            {t.lastUpdate} {new Date(activeOrder.created_at).toLocaleDateString(lang === "ID" ? "id-ID" : "en-US")}
+                                        </span>
+                                        <span className="bg-white text-blue-800 px-3 py-1 rounded-lg text-[10px] font-black border border-blue-200 shadow-sm">
+                                            {activeOrder.progress_listrik || 0}%
+                                        </span>
+                                    </div>
+                                    {/* ISI LAPORAN ELECTRICAL (HISTORY LOG) */}
+                                    {activeOrder.note_listrik ? (
+                                        <p className="text-slate-800 font-bold leading-relaxed text-sm whitespace-pre-wrap">
+                                            {activeOrder.note_listrik}
+                                        </p>
+                                    ) : (
+                                        <div className="text-center py-4 text-slate-400 italic text-xs">{t.noReport}</div>
+                                    )}
+                                  </div>
+                              </div>
+                          )}
+
+                      </div>
+                  )}
+
                </div>
             </div>
           </div>
