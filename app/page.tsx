@@ -6,22 +6,24 @@ import { useRouter } from "next/navigation";
 
 export default function Home() {
   const router = useRouter();
-  const [idSearch, setIdSearch] = useState("");
   
-  // State Data
+  // --- STATE PENCARIAN & DATA ---
+  const [idSearch, setIdSearch] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]); 
   const [selectedMachine, setSelectedMachine] = useState<any>(null); 
-  
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [selectedDetail, setSelectedDetail] = useState<string | null>(null);
   
-  // Login State
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  // --- STATE MODAL ---
+  const [selectedDetail, setSelectedDetail] = useState<string | null>(null); // Untuk pop-up foto detail
+  const [showLoginModal, setShowLoginModal] = useState(false); // Untuk login staff
+  const [showIOSGuide, setShowIOSGuide] = useState(false); // Untuk panduan iPhone
+  
+  // --- STATE LOGIN ---
   const [creds, setCreds] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
 
-  // --- 1. LOGIKA SEARCH ---
+  // 1. LOGIKA SEARCH MESIN
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idSearch) return;
@@ -37,7 +39,7 @@ export default function Home() {
       .eq("order_id", idSearch.trim().toUpperCase());
 
     if (error || !data || data.length === 0) {
-      setErrorMsg("❌ ID Not Found. Check your ID.");
+      setErrorMsg("❌ ID Not Found. Please check your Order ID.");
     } else {
       setSearchResults(data);
       if (data.length === 1) {
@@ -68,15 +70,13 @@ export default function Home() {
       }
   };
 
-  // --- 2. LOGIKA BUKA MODAL (RESET SAAT DIBUKA) ---
+  // 2. LOGIKA LOGIN STAFF
   const handleOpenLogin = () => {
-      // Bersihkan inputan setiap kali modal dibuka
       setCreds({ username: "", password: "" });
       setShowPassword(false);
       setShowLoginModal(true);
   };
 
-  // --- 3. LOGIKA LOGIN (RESET SAAT GAGAL) ---
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -91,10 +91,8 @@ export default function Home() {
 
       if (error || !data) {
         alert("❌ Login Gagal! Username atau Password salah.");
-        // RESET INPUT JIKA GAGAL
         setCreds({ username: "", password: "" });
       } else {
-        // Log Activity
         const newCount = (data.login_count || 0) + 1;
         await supabase.from("users").update({
             login_count: newCount,
@@ -103,7 +101,6 @@ export default function Home() {
 
         sessionStorage.setItem("user_role", data.role);
 
-        // ROUTING
         if (data.role === "admin") {
           router.push("/admin");
         } else if (data.role === "boss") {
@@ -117,8 +114,8 @@ export default function Home() {
         }
       }
     } catch (err) {
-      alert("Terjadi kesalahan sistem.");
-      setCreds({ username: "", password: "" }); // Reset juga kalau error sistem
+      alert("Terjadi kesalahan sistem login.");
+      setCreds({ username: "", password: "" }); 
     }
     setLoading(false);
   };
@@ -127,39 +124,73 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 p-4 font-sans text-slate-800 relative flex flex-col justify-center">
       <div className="max-w-md mx-auto w-full">
         
-        {/* TAMPILAN PENCARIAN */}
+        {/* === TAMPILAN 1: FORM PENCARIAN (HOME) === */}
         {searchResults.length === 0 && (
           <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-8 border border-white relative animate-in fade-in zoom-in-95 duration-500">
-            {/* TOMBOL GEMBOK (PAKAI FUNGSI BARU) */}
-            <button onClick={handleOpenLogin} className="absolute top-6 right-6 p-2 rounded-full text-gray-300 hover:text-blue-600 transition-all text-2xl">🔐</button>
+            
+            <button onClick={handleOpenLogin} className="absolute top-6 right-6 p-2 rounded-full text-gray-300 hover:text-blue-600 transition-all text-2xl" title="Staff Login">🔐</button>
             
             <div className="flex justify-center mb-6 mt-4">
-               <img src="/logo.png" alt="Logo Djitoe" className="h-32 w-auto object-contain" />
+               <img src="/logo.png" alt="Logo Djitoe" className="h-28 w-auto object-contain" />
             </div>
             
-            <div className="text-center mb-10">
-                <h1 className="text-3xl font-black text-slate-800 uppercase tracking-tighter mb-1">TRACKING <span className="text-blue-600">Machine</span></h1>
-                <p className="text-gray-400 text-xs font-bold tracking-widest uppercase">Monitoring Progress MACHINE</p>
+            <div className="text-center mb-8">
+                <h1 className="text-3xl font-black text-slate-800 uppercase tracking-tighter mb-1">TRACKING <span className="text-blue-600">MACHINE</span></h1>
+                <p className="text-gray-400 text-xs font-bold tracking-widest uppercase">MONITORING PROGRESS MACHINE</p>
             </div>
             
             <form onSubmit={handleSearch}>
-              <div className="mb-6 relative group">
+              <div className="mb-4 relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><span className="text-gray-400 text-lg group-focus-within:text-blue-500 transition-colors">🔍</span></div>
-                <input type="text" placeholder="ORDER ID" className="w-full pl-12 pr-4 py-5 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-blue-500 outline-none transition-all font-black text-slate-900 uppercase placeholder-gray-300 tracking-wide" 
-                    value={idSearch} onChange={(e) => setIdSearch(e.target.value)} />
+                <input 
+                    type="text" 
+                    placeholder="ENTER ORDER ID" 
+                    className="w-full pl-12 pr-4 py-5 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-blue-500 outline-none transition-all font-black text-slate-900 uppercase placeholder-gray-300 tracking-wide" 
+                    value={idSearch} 
+                    onChange={(e) => setIdSearch(e.target.value)} 
+                />
               </div>
               <button disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-xl shadow-blue-200 transition-all active:scale-95 text-sm tracking-wider">
                   {loading ? "SEARCHING..." : "TRACK STATUS"}
               </button>
             </form>
             
+            {/* === BAGIAN INSTALL APLIKASI (UPDATE LOGO SVG) === */}
+            <div className="mt-8 pt-6 border-t border-gray-100">
+                <p className="text-[10px] font-bold text-gray-400 uppercase mb-3 tracking-widest text-center">Install</p>
+                <div className="grid grid-cols-2 gap-3">
+                    
+                    {/* TOMBOL ANDROID (Logo Hijau Asli) */}
+                    <a href="/djitoe-app.apk" download className="flex flex-col items-center justify-center bg-green-50 text-green-600 border border-green-200 py-3 px-2 rounded-xl hover:bg-green-600 hover:text-white transition-all cursor-pointer text-center group">
+                        {/* SVG Logo Android */}
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" className="w-7 h-7 mb-1 group-hover:scale-110 transition">
+                          <path d="M420.55,301.93a24,24,0,1,1,24-24,24,24,0,0,1-24,24m-265.1,0a24,24,0,1,1,24-24,24,24,0,0,1-24,24m273.7-144.48,47.94-83a10,10,0,1,0-17.32-10h0L413.66,144.4a286.43,286.43,0,0,0-251.32,0L116.14,64.44a10,10,0,1,0-17.32,10h0l47.94,83C64.53,202.22,8.24,285.55,0,384H576c-8.24-98.45-64.53-181.78-146.85-226.55"/>
+                        </svg>
+                        <p className="text-[9px] font-black uppercase">Android</p>
+                    </a>
+
+                    {/* TOMBOL IPHONE (Logo Apple Asli Dark) */}
+                    <button onClick={() => setShowIOSGuide(true)} className="flex flex-col items-center justify-center bg-slate-50 text-slate-800 border border-slate-200 py-3 px-2 rounded-xl hover:bg-slate-800 hover:text-white transition-all cursor-pointer text-center group">
+                        {/* SVG Logo Apple */}
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" className="w-7 h-7 mb-1 group-hover:scale-110 transition">
+                          <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-46.6-35.5-4.6-86.7 18.1-110.6 18.1-23.9 0-67.3-20.9-101.2-19.4-49.2 1.8-88.7 26.9-113.3 69.5-40.5 69.4-10.5 172.2 29.2 229.6 19.2 27.9 40.9 58.4 70.5 58.4 28.1 0 38.6-18.1 72.3-18.1 34.2 0 43.7 18.1 73.5 18.1 29.2 0 47.7-25.5 65.8-51.1 20.4-28.6 28.8-41.2 32.1-42.4-17.9-7.7-31.2-23.6-33.6-49.3zM248.3 52.3c22.4-26.9 37.6-64.1 33.4-101.2-32.1 2.5-71.3 21.1-94.2 48-20.6 24.1-38.6 61.9-33.4 98.9 35.8 2.8 72.5-19.1 94.2-45.7z"/>
+                        </svg>
+                        <p className="text-[9px] font-black uppercase">iPhone / iOS</p>
+                    </button>
+                    
+                </div>
+            </div>
+            
             {errorMsg && <div className="mt-6 p-4 bg-red-50 rounded-2xl text-red-500 text-xs font-bold text-center border border-red-100 animate-pulse">{errorMsg}</div>}
-            <div className="mt-10 border-t border-gray-50 pt-6"><p className="text-center text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.0</p></div>
-            <div className="mt-0 border-t border-gray-50 pt-1"><p className="text-center text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">www.djitoemesindo.com</p></div>
+            
+            <div className="mt-8 text-center">
+                <p className="text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.0</p>
+                <p className="text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">WWW.DJITOEMESINDO.COM</p>
+            </div>
           </div>
         )}
 
-        {/* TAMPILAN PILIH MESIN */}
+        {/* === TAMPILAN 2: PILIH MESIN (JIKA HASIL LEBIH DARI 1) === */}
         {(searchResults.length > 1 && !selectedMachine) && (
             <div className="animate-in fade-in slide-in-from-bottom duration-500">
                 <button onClick={() => { setSearchResults([]); setIdSearch(""); }} className="mb-6 bg-white px-4 py-2 rounded-full shadow-sm text-slate-400 text-xs font-bold hover:text-blue-600 hover:shadow-md flex items-center gap-2 transition-all w-fit mx-auto">← CHECK ANOTHER ID</button>
@@ -187,18 +218,19 @@ export default function Home() {
             </div>
         )}
 
-        {/* TAMPILAN DETAIL */}
+        {/* === TAMPILAN 3: DETAIL TRACKING MESIN === */}
         {selectedMachine && (
           <div className="animate-in fade-in slide-in-from-bottom duration-500">
             <button onClick={handleBack} className="mb-6 bg-white px-4 py-2 rounded-full shadow-sm text-slate-400 text-xs font-bold hover:text-blue-600 hover:shadow-md flex items-center gap-2 transition-all w-fit mx-auto">
-                ← {searchResults.length > 1 ? "CHANGE MACHINE" : "CHECK ANOTHER ID"}
+                ← {searchResults.length > 1 ? "PILIH MESIN LAIN" : "CHECK ANOTHER ID"}
             </button>
-            
             <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-6 border border-white relative">
+              
+              {/* HEADER INFO MESIN */}
               <div className="bg-blue-50/50 p-5 rounded-3xl mb-8 border border-blue-50">
                 <div className="flex justify-between items-center border-b border-blue-100 pb-3 mb-3">
-                    <span className="text-[10px] font-black text-blue-300 uppercase tracking-wider">Machine</span>
-                    <span className="font-black text-blue-900 text-lg uppercase">{selectedMachine.machine_name || selectedMachine.machine_type}</span>
+                    <span className="text-[10px] font-black text-blue-300 uppercase tracking-wider">Machine Model</span>
+                    <span className="font-black text-blue-900 text-lg uppercase text-right">{selectedMachine.machine_name || selectedMachine.machine_type}</span>
                 </div>
                 <div className="flex justify-between items-center">
                     <span className="text-[10px] font-black text-blue-300 uppercase tracking-wider">Mechanic</span>
@@ -206,43 +238,53 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* SPESIFIKASI */}
               {selectedMachine.spesifikasi && (
                 <div className="mb-8 bg-blue-50 p-5 rounded-3xl border border-blue-100 shadow-sm text-slate-800">
-                  <p className="text-[10px] font-black text-blue-600 uppercase mb-2 flex items-center gap-2">⚙️ Specifications</p>
+                  <p className="text-[10px] font-black text-blue-600 uppercase mb-2 flex items-center gap-2">⚙️ SPECIFICATIONS</p>
                   <p className="font-bold leading-relaxed text-sm whitespace-pre-wrap">{selectedMachine.spesifikasi}</p>
                 </div>
               )}
 
+              {/* TIMELINE PROGRESS */}
               <div className="space-y-0 relative pl-2">
                 <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-gray-100 -z-10"></div>
+                
+                {/* Step 1: Order Confirmed */}
                 <div className="flex gap-5 pb-8">
                     <div className="flex flex-col items-center"><div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-sm shadow-lg shadow-green-200 z-10">✓</div></div>
                     <div className="pt-2"><p className="font-bold text-gray-400 text-sm">Order Confirmed</p></div>
                 </div>
+                
+                {/* Step 2: Assembly */}
                 <div onClick={() => (selectedMachine.progress_number >= 1 && selectedMachine.progress_number < 75) && setSelectedDetail("perakitan")} className={`flex gap-5 pb-8 ${(selectedMachine.progress_number >= 1 && selectedMachine.progress_number < 75) ? 'cursor-pointer group' : ''}`}>
                   <div className="flex flex-col items-center relative">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all z-10 shadow-lg ${selectedMachine.progress_number >= 75 ? 'bg-green-500 text-white shadow-green-200' : (selectedMachine.progress_number >= 1 ? 'bg-blue-600 text-white ring-4 ring-blue-50 shadow-blue-300' : 'bg-white border-2 border-gray-100 text-gray-300')}`}>{selectedMachine.progress_number >= 75 ? '✓' : '2'}</div>
                   </div>
                   <div className="pt-2">
                       <p className={`font-bold text-sm ${selectedMachine.progress_number >= 1 && selectedMachine.progress_number < 75 ? 'text-blue-700' : (selectedMachine.progress_number >= 75 ? 'text-gray-400' : 'text-gray-300')}`}>Component Assembly</p>
-                      <p className="text-[10px] font-bold uppercase mt-1">{selectedMachine.progress_number >= 75 ? <span className="text-green-500">✓ Finished</span> : (selectedMachine.progress_number >= 1 ? <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded">● Detail</span> : <span className="text-gray-300">🔒 Locked</span>)}</p>
+                      <p className="text-[10px] font-bold uppercase mt-1">{selectedMachine.progress_number >= 75 ? <span className="text-green-500">✓ Finished</span> : (selectedMachine.progress_number >= 1 ? <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded">●Detail</span> : <span className="text-gray-300">🔒 Locked</span>)}</p>
                   </div>
                 </div>
+
+                {/* Step 3: QC */}
                 <div onClick={() => (selectedMachine.progress_number >= 75 && selectedMachine.progress_number < 100) && setSelectedDetail("qc")} className={`flex gap-5 pb-8 ${(selectedMachine.progress_number >= 75 && selectedMachine.progress_number < 100) ? 'cursor-pointer group' : ''}`}>
                   <div className="flex flex-col items-center relative">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all z-10 shadow-lg ${selectedMachine.progress_number >= 100 ? 'bg-green-500 text-white shadow-green-200' : (selectedMachine.progress_number >= 75 ? 'bg-blue-600 text-white ring-4 ring-blue-50 shadow-blue-300' : 'bg-white border-2 border-gray-100 text-gray-300')}`}>{selectedMachine.progress_number >= 100 ? '✓' : '3'}</div>
                   </div>
                   <div className="pt-2">
                       <p className={`font-bold text-sm ${selectedMachine.progress_number >= 75 && selectedMachine.progress_number < 100 ? 'text-blue-700' : (selectedMachine.progress_number >= 100 ? 'text-gray-400' : 'text-gray-300')}`}>Quality Control</p>
-                      <p className="text-[10px] font-bold uppercase mt-1">{selectedMachine.progress_number >= 100 ? <span className="text-green-500">✓ Finished</span> : (selectedMachine.progress_number >= 75 ? <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded">● Detail</span> : <span className="text-gray-300">🔒 Locked</span>)}</p>
+                      <p className="text-[10px] font-bold uppercase mt-1">{selectedMachine.progress_number >= 100 ? <span className="text-green-500">✓ Finished</span> : (selectedMachine.progress_number >= 75 ? <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded">●Detail</span> : <span className="text-gray-300">🔒 Locked</span>)}</p>
                   </div>
                 </div>
+
+                {/* Step 4: Delivery */}
                 <div className={`flex gap-5 ${selectedMachine.progress_number < 100 ? 'opacity-40' : ''}`}>
                   <div className="flex flex-col items-center relative">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all z-10 shadow-lg ${selectedMachine.delivery_status === 'Selesai' ? 'bg-green-600 text-white shadow-green-200' : (selectedMachine.progress_number >= 100 ? 'bg-blue-600 text-white shadow-blue-300' : 'bg-white border-2 border-gray-100 text-gray-300')}`}>{selectedMachine.delivery_status === 'Selesai' ? '✓' : (selectedMachine.delivery_status === 'Dalam Perjalanan' ? '🚚' : '4')}</div>
                   </div>
                   <div className="pt-2">
-                    <p className={`font-bold text-sm ${selectedMachine.progress_number >= 100 ? 'text-slate-900' : 'text-gray-300'}`}>{selectedMachine.delivery_status === 'Selesai' && "Completed"}{selectedMachine.delivery_status === 'Dalam Perjalanan' && "In Transit"}{selectedMachine.delivery_status === 'Siap Dikirim' && "Ready to Ship"}{(!selectedMachine.delivery_status && selectedMachine.progress_number >= 100) && "Ready to Ship"}{selectedMachine.progress_number < 100 && "Ready to Ship"}</p>
+                    <p className={`font-bold text-sm ${selectedMachine.progress_number >= 100 ? 'text-slate-900' : 'text-gray-300'}`}>{selectedMachine.delivery_status === 'Selesai' && "Completed"}{selectedMachine.delivery_status === 'Dalam Perjalanan' && "In Transit"}{selectedMachine.delivery_status === 'Siap Dikirim' && "Ready to Ship"}{(!selectedMachine.delivery_status && selectedMachine.progress_number >= 100) && "Ready to Ship"}{selectedMachine.progress_number < 100 && "Pending"}</p>
                     {selectedMachine.delivery_status === 'Dalam Perjalanan' && <p className="text-[10px] font-bold text-blue-500 mt-1 uppercase animate-pulse">● Out for Delivery</p>}
                     {selectedMachine.delivery_status === 'Selesai' && <p className="text-[10px] font-bold text-green-500 mt-1 uppercase">✓ Received</p>}
                   </div>
@@ -254,7 +296,41 @@ export default function Home() {
         )}
       </div>
 
-      {/* MODAL FOTO */}
+      {/* === MODAL 4: PANDUAN IPHONE (PWA) === */}
+      {showIOSGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-in fade-in">
+          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-xs shadow-2xl relative border-2 border-white text-center">
+            <button onClick={() => setShowIOSGuide(false)} className="absolute top-4 right-4 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-bold">✕</button>
+            <div className="text-5xl mb-4">
+                {/* SVG Logo Apple Besar untuk Modal */}
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" className="w-16 h-16 mx-auto text-slate-800">
+                  <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-46.6-35.5-4.6-86.7 18.1-110.6 18.1-23.9 0-67.3-20.9-101.2-19.4-49.2 1.8-88.7 26.9-113.3 69.5-40.5 69.4-10.5 172.2 29.2 229.6 19.2 27.9 40.9 58.4 70.5 58.4 28.1 0 38.6-18.1 72.3-18.1 34.2 0 43.7 18.1 73.5 18.1 29.2 0 47.7-25.5 65.8-51.1 20.4-28.6 28.8-41.2 32.1-42.4-17.9-7.7-31.2-23.6-33.6-49.3zM248.3 52.3c22.4-26.9 37.6-64.1 33.4-101.2-32.1 2.5-71.3 21.1-94.2 48-20.6 24.1-38.6 61.9-33.4 98.9 35.8 2.8 72.5-19.1 94.2-45.7z"/>
+                </svg>
+            </div>
+            <h3 className="text-xl font-black text-slate-800 mb-2 uppercase">Install di iPhone</h3>
+            <p className="text-xs text-gray-500 mb-6 leading-relaxed">Apple tidak mengizinkan download file APK. Silakan ikuti langkah ini untuk hasil seperti aplikasi:</p>
+            
+            <div className="space-y-4 text-left bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <div className="flex gap-3 items-center">
+                    <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                    <p className="text-xs font-bold text-slate-700">Tekan tombol <span className="font-black text-blue-600">Share (Kotak Panah)</span> di browser Safari.</p>
+                </div>
+                <div className="flex gap-3 items-center">
+                    <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                    <p className="text-xs font-bold text-slate-700">Geser menu, pilih <span className="font-black text-blue-600">"Add to Home Screen"</span> (Tambah ke Layar Utama).</p>
+                </div>
+                <div className="flex gap-3 items-center">
+                    <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                    <p className="text-xs font-bold text-slate-700">Klik <span className="font-black text-blue-600">Add (Tambah)</span> di pojok kanan atas.</p>
+                </div>
+            </div>
+            
+            <button onClick={() => setShowIOSGuide(false)} className="w-full bg-slate-900 text-white py-3 rounded-xl font-black mt-6 hover:bg-black transition-all text-xs uppercase">Saya Mengerti</button>
+          </div>
+        </div>
+      )}
+
+      {/* === MODAL DETAIL FOTO & LOGIN STAFF (TETAP SAMA) === */}
       {selectedDetail && selectedMachine && (
         <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-5 z-50 backdrop-blur-md animate-in fade-in">
           <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl relative border border-white/50">
@@ -263,17 +339,22 @@ export default function Home() {
                 <img src={selectedMachine.public_foto_url || "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500"} className="w-full h-full object-cover" alt="Progress Picture" />
             </div>
             <div className="p-8">
-              <h3 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">search results</h3>
+              <h3 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">SEARCH RESULTS</h3>
               <div className="h-1 w-12 bg-blue-500 rounded-full mb-4"></div>
               <p className="text-gray-500 text-sm mb-4 leading-relaxed font-medium">Status Progress: <strong className="text-slate-900">{selectedMachine.public_status}</strong>.</p>
-              {selectedMachine.deskripsi_progress && (<div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 text-sm"><p className="text-xs font-bold text-blue-600 uppercase mb-1">NOTE:</p><p className="text-slate-700">{selectedMachine.deskripsi_progress}</p></div>)}
-              <button onClick={() => setSelectedDetail(null)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all">Close</button>
+              
+              {selectedMachine.deskripsi_progress && (
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 text-sm">
+                      <p className="text-xs font-bold text-blue-600 uppercase mb-1">NOTE :</p>
+                      <p className="text-slate-700">{selectedMachine.deskripsi_progress}</p>
+                  </div>
+              )}
+              <button onClick={() => setSelectedDetail(null)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all">CLOSE</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL LOGIN */}
       {showLoginModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/20 backdrop-blur-md animate-in fade-in zoom-in-95">
           <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-xs shadow-2xl relative border border-white">
@@ -282,12 +363,14 @@ export default function Home() {
             <h2 className="text-2xl font-black text-center text-slate-800 uppercase mb-2 tracking-tight">Access Staff</h2>
             <p className="text-xs text-center text-gray-400 font-bold mb-8 uppercase tracking-widest">Admin & Direksi Only</p>
             <form onSubmit={handleLogin} className="space-y-4">
-              <div><input type="text" placeholder="USERNAME" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-slate-900 font-black outline-none focus:border-blue-500 text-center uppercase tracking-wider text-sm transition-all placeholder-gray-300" value={creds.username} onChange={(e) => setCreds({ ...creds, username: e.target.value.toUpperCase() })} /></div>
+              <div>
+                  <input type="text" placeholder="USERNAME" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-slate-900 font-black outline-none focus:border-blue-500 text-center uppercase tracking-wider text-sm transition-all placeholder-gray-300" value={creds.username} onChange={(e) => setCreds({ ...creds, username: e.target.value.toUpperCase() })} />
+              </div>
               <div className="relative">
                   <input type={showPassword ? "text" : "password"} placeholder="••••" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-slate-900 font-black outline-none focus:border-blue-500 text-center tracking-widest text-base transition-all placeholder-gray-300 pr-12" value={creds.password} onChange={(e) => setCreds({ ...creds, password: e.target.value })} />
                   <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl grayscale opacity-50 hover:opacity-100 active:scale-95 transition-all" onMouseDown={() => setShowPassword(true)} onMouseUp={() => setShowPassword(false)} onMouseLeave={() => setShowPassword(false)} onTouchStart={() => setShowPassword(true)} onTouchEnd={() => setShowPassword(false)}>{showPassword ? "👀" : "👁️"}</button>
               </div>
-              <button className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black mt-2 hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all text-sm">MASUK</button>
+              <button className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black mt-2 hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all text-sm">MASUK SYSTEM</button>
             </form>
           </div>
         </div>
