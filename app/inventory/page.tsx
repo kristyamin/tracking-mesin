@@ -9,6 +9,7 @@ export default function InventoryPage() {
   const [role, setRole] = useState("");
   const [activeTab, setActiveTab] = useState<"MESS" | "VEHICLE">("MESS");
   const [loading, setLoading] = useState(true);
+  const [isReportMode, setIsReportMode] = useState(false);
 
   // DATA STATE
   const [messList, setMessList] = useState<any[]>([]);
@@ -39,7 +40,6 @@ export default function InventoryPage() {
       mess_id: "", nama: "", nik: "", hp: "", kamar: "", jabatan: ""
   });
 
-  // --- 1. CEK AKSES & FETCH DATA ---
   useEffect(() => {
     const userRole = sessionStorage.getItem("user_role");
     if (userRole !== "mess_admin" && userRole !== "mess_viewer") {
@@ -64,10 +64,10 @@ export default function InventoryPage() {
     setLoading(false);
   };
 
-  // --- 2. LOGIKA SEARCH & SORTING ---
+  // --- LOGIKA FILTER KENDARAAN ---
   const getFilteredAndSortedVehicles = () => {
       let filtered = vehicleList;
-      if (searchTerm) {
+      if (searchTerm && activeTab === "VEHICLE") { // Hanya filter jika di tab vehicle
           const lowerTerm = searchTerm.toLowerCase();
           filtered = vehicleList.filter(v => 
               v.nama_kendaraan?.toLowerCase().includes(lowerTerm) || 
@@ -76,31 +76,58 @@ export default function InventoryPage() {
               v.mess_locations?.nama_mess?.toLowerCase().includes(lowerTerm)
           );
       }
-      return filtered.sort((a, b) => {
-          if (!a.mess_id && b.mess_id) return -1;
-          if (a.mess_id && !b.mess_id) return 1;
-          return new Date(a.tgl_service).getTime() - new Date(b.tgl_service).getTime();
-      });
+      return filtered.sort((a, b) => new Date(a.tgl_service).getTime() - new Date(b.tgl_service).getTime());
+  };
+
+  // --- LOGIKA FILTER MESS (BARU) ---
+  const getFilteredMessList = () => {
+      let filtered = messList;
+      if (searchTerm && activeTab === "MESS") { // Filter jalan saat di tab MESS
+          const lowerTerm = searchTerm.toLowerCase();
+          filtered = messList.filter(mess => {
+              // 1. Cari berdasarkan Nama Mess
+              const matchNama = mess.nama_mess?.toLowerCase().includes(lowerTerm);
+              // 2. Cari berdasarkan PIC Mess
+              const matchPic = mess.pic_utama?.toLowerCase().includes(lowerTerm);
+              // 3. Cari berdasarkan Nama Penghuni di dalamnya
+              const residentsInMess = residentList.filter(r => r.mess_id === mess.id);
+              const matchPenghuni = residentsInMess.some(r => r.nama_karyawan?.toLowerCase().includes(lowerTerm));
+              
+              return matchNama || matchPic || matchPenghuni;
+          });
+      }
+      return filtered;
   };
 
   const finalVehicleList = getFilteredAndSortedVehicles();
-  const mobilList = finalVehicleList.filter(v => v.jenis === 'MOBIL');
-  const motorList = finalVehicleList.filter(v => v.jenis === 'MOTOR');
+  const nonMessVehicles = finalVehicleList.filter(v => !v.mess_id); 
+  const messVehicles = finalVehicleList.filter(v => v.mess_id);     
+  const finalMessList = getFilteredMessList(); // Pakai list mess yang sudah difilter
 
-  // --- 3. INDIKATOR JADWAL ---
+  // LOGIKA INDIKATOR WARNA
   const getStatusIndicator = (dateString: string, type: string) => {
       if (!dateString) return <span className="text-gray-300 text-[9px] font-mono">--</span>;
       const today = new Date();
+      today.setHours(0,0,0,0);
       const targetDate = new Date(dateString);
       const diffTime = targetDate.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diffDays < 0) return <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[9px] font-black border border-red-200 animate-pulse print:border-none print:text-black print:animate-none">🔴 TELAT {Math.abs(diffDays)} HARI ({type})</span>;
-      else if (diffDays <= 7) return <span className="bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded text-[9px] font-black border border-yellow-200 print:border-none print:text-black">🟡 H-{diffDays} ({type})</span>;
-      else return <span className="bg-green-50 text-green-600 px-2 py-0.5 rounded text-[9px] font-bold border border-green-200 print:border-none print:text-black">🟢 OK ({type})</span>;
+      if (diffDays < 0) return <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[9px] font-black animate-pulse shadow-md">🚨 TELAT {Math.abs(diffDays)} HARI ({type})</span>;
+      else if (diffDays <= 1) return <span className="bg-red-100 text-red-700 border border-red-300 px-2 py-0.5 rounded text-[9px] font-black animate-pulse">🔴 BESOK! ({type})</span>;
+      else if (diffDays <= 3) return <span className="bg-orange-100 text-orange-700 border border-orange-300 px-2 py-0.5 rounded text-[9px] font-black">🟠 H-{diffDays} ({type})</span>;
+      else if (diffDays <= 7) return <span className="bg-yellow-100 text-yellow-700 border border-yellow-300 px-2 py-0.5 rounded text-[9px] font-black">🟡 H-{diffDays} ({type})</span>;
+      else return <span className="bg-green-50 text-green-600 px-2 py-0.5 rounded text-[9px] font-bold border border-green-200">🟢 OK ({type})</span>;
   };
 
-  // --- 4. PREPARE EDIT & ADD FUNCTIONS ---
+  const handlePrintResidents = () => {
+    setIsReportMode(true);
+    setTimeout(() => {
+        window.print();
+    }, 500);
+  };
+
+  // CRUD FUNCTIONS
   const openAddMess = () => { setEditingMessId(null); setFormMessData({ nama: "", pic: "", alamat: "", kamar: "" }); setShowFormMess(true); };
   const openAddVehicle = () => { setEditingVehicleId(null); setFormVehicleData({ mess_id: "", jenis: "MOBIL", nama: "", plat: "", pic: "", nik: "", kontak: "", pajak: "", service: "", oli: "" }); setShowFormVehicle(true); };
 
@@ -117,7 +144,6 @@ export default function InventoryPage() {
       setShowFormVehicle(true);
   };
 
-  // --- 5. SAVE & DELETE LOGIC ---
   const handleSaveMess = async () => {
       if (!formMessData.nama) return alert("Nama Mess Wajib!");
       const payload = { nama_mess: formMessData.nama, pic_utama: formMessData.pic, alamat: formMessData.alamat, jumlah_kamar: parseInt(formMessData.kamar) || 0 };
@@ -146,82 +172,135 @@ export default function InventoryPage() {
       fetchData();
   };
 
-  // KOMPONEN TABEL KENDARAAN
-  const VehicleTable = ({ data, title, icon }: any) => (
-      <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm mb-8 animate-in slide-in-from-right print:shadow-none print:border-black print:rounded-none">
-          <div className="bg-slate-50 p-4 border-b border-slate-100 flex items-center gap-2 print:bg-white print:border-black">
-              <span className="text-xl">{icon}</span>
-              <h3 className="font-black text-slate-700 uppercase text-sm tracking-wider">{title} ({data.length})</h3>
+  // --- COMPONENT TABEL KENDARAAN ---
+  const VehicleTable = ({ data, title, colorTheme }: any) => (
+      <div className={`bg-white rounded-[2rem] border overflow-hidden shadow-sm flex flex-col h-full ${colorTheme === 'dark' ? 'border-slate-800' : 'border-slate-200'}`}>
+          <div className={`p-4 border-b flex items-center gap-2 ${colorTheme === 'dark' ? 'bg-slate-800 text-white' : 'bg-slate-50 text-slate-700'}`}>
+              <h3 className="font-black uppercase text-sm tracking-wider flex-1">{title} <span className="opacity-70 text-xs ml-1">({data.length} Unit)</span></h3>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto flex-1">
               <table className="w-full text-left text-sm">
-                  <thead className="bg-white text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-50 print:text-black print:border-black">
+                  <thead className="bg-white text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-50">
                       <tr>
-                          <th className="p-4">Identitas Kendaraan</th>
-                          <th className="p-4">Penanggung Jawab</th>
-                          <th className="p-4">Lokasi Aset</th>
-                          <th className="p-4">Jadwal Maintenance</th>
-                          {role === 'mess_admin' && <th className="p-4 text-center print:hidden">Aksi</th>}
+                          <th className="p-3">Info Aset</th>
+                          <th className="p-3">Lokasi/PIC</th>
+                          <th className="p-3">Jadwal</th>
+                          {role === 'mess_admin' && <th className="p-3 text-center">Aksi</th>}
                       </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50 print:divide-black">
+                  <tbody className="divide-y divide-slate-50">
                       {data.map((v: any) => (
-                          <tr key={v.id} className={`transition ${!v.mess_locations ? 'bg-yellow-50/30 hover:bg-yellow-50 print:bg-white' : 'hover:bg-blue-50/30 print:bg-white'}`}>
-                              <td className="p-4">
+                          <tr key={v.id} className="hover:bg-slate-50 transition">
+                              <td className="p-3">
                                   <div className="flex items-center gap-2">
-                                      {!v.mess_locations && <span className="text-yellow-500 text-xs print:hidden" title="Kendaraan Pribadi/Non-Mess">★</span>}
+                                      <span className="text-xl" title={v.jenis}>{v.jenis === 'MOBIL' ? '🚙' : '🏍️'}</span>
                                       <div>
-                                          <p className="font-black text-slate-800 uppercase text-sm">{v.nama_kendaraan}</p>
-                                          <p className="font-bold text-white bg-slate-800 px-2 py-0.5 rounded text-[10px] w-fit tracking-wider mt-1 print:bg-white print:text-black print:border print:border-black">{v.plat_nomor}</p>
+                                          <p className="font-black text-slate-800 uppercase text-xs">{v.nama_kendaraan}</p>
+                                          <p className="font-bold text-white bg-slate-800 px-1.5 py-0.5 rounded-[4px] text-[9px] w-fit mt-1">{v.plat_nomor}</p>
                                       </div>
                                   </div>
                               </td>
-                              <td className="p-4">
-                                  <p className="font-bold text-slate-700 text-xs uppercase">{v.pic_kendaraan || "Tanpa PIC"}</p>
-                                  <div className="flex flex-col gap-0.5 mt-1">
-                                      <span className="text-[10px] text-slate-400 font-mono bg-slate-50 px-1 rounded w-fit print:bg-white print:text-black">NIK: {v.pic_nik || "-"}</span>
-                                      <span className="text-[10px] text-slate-400 print:text-black">📞 {v.pic_kontak || "-"}</span>
-                                  </div>
+                              <td className="p-3">
+                                  <p className="font-bold text-slate-700 text-[10px] uppercase">{v.mess_locations ? v.mess_locations.nama_mess : "NON-MESS"}</p>
+                                  <p className="text-[10px] text-slate-400">👤 {v.pic_kendaraan || "-"}</p>
                               </td>
-                              <td className="p-4">
-                                  {v.mess_locations ? (
-                                      <div className="flex items-center gap-1.5"><span className="text-lg print:hidden">🏢</span><div><p className="font-bold text-slate-700 text-xs">{v.mess_locations.nama_mess}</p><p className="text-[9px] text-slate-400 print:text-black">Fasilitas Mess</p></div></div>
-                                  ) : (
-                                      <div className="flex items-center gap-1.5 opacity-70 print:opacity-100"><span className="text-lg print:hidden">🏠</span><div><p className="font-bold text-yellow-700 text-xs print:text-black">NON-MESS</p><p className="text-[9px] text-yellow-600 print:text-black">Dipegang Pribadi</p></div></div>
-                                  )}
-                              </td>
-                              <td className="p-4 space-y-1">
-                                  <div>{getStatusIndicator(v.tgl_service, "Service")}</div>
-                                  <div>{getStatusIndicator(v.tgl_ganti_oli, "Ganti Oli")}</div>
-                                  <div className="text-[10px] text-slate-400 mt-1 font-mono print:text-black">Pajak: {v.tgl_pajak ? new Date(v.tgl_pajak).toLocaleDateString("id-ID") : "-"}</div>
+                              <td className="p-3 space-y-1">
+                                  <div>{getStatusIndicator(v.tgl_service, "Svc")}</div>
+                                  <div>{getStatusIndicator(v.tgl_ganti_oli, "Oli")}</div>
+                                  <div>{getStatusIndicator(v.tgl_pajak, "Pjk")}</div>
                               </td>
                               {role === 'mess_admin' && (
-                                  <td className="p-4 text-center print:hidden">
-                                      <div className="flex justify-center gap-2">
-                                          <button onClick={() => openEditVehicle(v)} className="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2 rounded-lg transition" title="Edit">✏️</button>
-                                          <button onClick={() => handleDelete('mess_vehicles', v.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-lg transition" title="Hapus">🗑️</button>
+                                  <td className="p-3 text-center">
+                                      <div className="flex justify-center gap-1">
+                                          <button onClick={() => openEditVehicle(v)} className="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-1.5 rounded-lg transition text-xs">✏️</button>
+                                          <button onClick={() => handleDelete('mess_vehicles', v.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-1.5 rounded-lg transition text-xs">🗑️</button>
                                       </div>
                                   </td>
                               )}
                           </tr>
                       ))}
-                      {data.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-slate-400 text-xs italic">Tidak ada data.</td></tr>}
                   </tbody>
               </table>
           </div>
       </div>
   );
 
+  // --- TAMPILAN MODE LAPORAN (KHUSUS PRINT) ---
+  if (isReportMode) {
+    return (
+        <div className="bg-white min-h-screen p-8 font-sans text-black">
+            <div className="print:hidden mb-6 flex justify-between items-center bg-slate-100 p-4 rounded-xl">
+                <p className="font-bold text-slate-700">Mode Pratinjau Cetak</p>
+                <button onClick={() => setIsReportMode(false)} className="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700 transition">
+                    ❌ KEMBALI KE DASHBOARD
+                </button>
+            </div>
+            <div className="text-center mb-8 border-b-2 border-black pb-4">
+                <h1 className="text-2xl font-black uppercase tracking-widest">PT DJITOE MESINDO</h1>
+                <h2 className="text-xl font-bold uppercase mt-1">LAPORAN DATA PENGHUNI MESS</h2>
+                <p className="text-sm mt-2">Dicetak pada: {new Date().toLocaleDateString("id-ID", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+            <div className="space-y-8">
+                {messList.map((mess) => {
+                    const residents = residentList.filter(r => r.mess_id === mess.id);
+                    if (residents.length === 0) return null; 
+
+                    return (
+                        <div key={mess.id} className="break-inside-avoid">
+                            <div className="flex justify-between items-end mb-2 border-b border-black pb-1">
+                                <h3 className="font-black text-lg uppercase">📍 {mess.nama_mess}</h3>
+                                <p className="text-xs font-mono">{mess.alamat}</p>
+                            </div>
+                            <table className="w-full text-left text-sm border-collapse border border-black">
+                                <thead>
+                                    <tr className="bg-gray-200 text-black">
+                                        <th className="border border-black p-2 w-10 text-center">No</th>
+                                        <th className="border border-black p-2">Nama Karyawan</th>
+                                        <th className="border border-black p-2">NIK</th>
+                                        <th className="border border-black p-2">Jabatan</th>
+                                        <th className="border border-black p-2 text-center">Kamar</th>
+                                        <th className="border border-black p-2">Kontak HP</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {residents.map((r, idx) => (
+                                        <tr key={r.id}>
+                                            <td className="border border-black p-2 text-center">{idx + 1}</td>
+                                            <td className="border border-black p-2 font-bold uppercase">{r.nama_karyawan}</td>
+                                            <td className="border border-black p-2 font-mono">{r.nik || "-"}</td>
+                                            <td className="border border-black p-2">{r.jabatan || "-"}</td>
+                                            <td className="border border-black p-2 text-center">{r.kamar_no || "-"}</td>
+                                            <td className="border border-black p-2">{r.no_hp || "-"}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <div className="mt-2 text-right text-xs italic">Total: {residents.length} Penghuni</div>
+                        </div>
+                    );
+                })}
+            </div>
+            <div className="mt-16 flex justify-end print:mt-10 break-inside-avoid">
+                <div className="text-center w-64">
+                    <p className="mb-16">Mengetahui,</p>
+                    <p className="font-bold underline uppercase">( ....................................... )</p>
+                    <p className="text-xs mt-1">HRD / Pimpinan</p>
+                </div>
+            </div>
+        </div>
+    );
+  }
+
+  // --- TAMPILAN DASHBOARD UTAMA (NORMAL) ---
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 p-4 md:p-8 print:bg-white print:p-0">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         
-        {/* HEADER (Tombol Hilang saat Print) */}
+        {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 print:mb-4">
             <div>
                 <h1 className="text-3xl font-black text-slate-800 uppercase tracking-tighter">INVENTARIS PERUSAHAAN</h1>
                 <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">PT DJITOE MESINDO - ASSET MANAGEMENT</p>
-                <p className="hidden print:block text-[10px] mt-1 text-slate-400">Dicetak pada: {new Date().toLocaleDateString("id-ID")}</p>
             </div>
             <div className="flex flex-wrap gap-2 justify-center print:hidden">
                 {role === "mess_admin" && (
@@ -235,94 +314,95 @@ export default function InventoryPage() {
             </div>
         </div>
 
-        {/* TAB MENU & SEARCH & PRINT (Hilang saat Print) */}
+        {/* TAB MENU */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 print:hidden">
             <div className="flex gap-2 bg-white p-1 rounded-2xl w-fit shadow-sm border border-slate-200">
-                <button onClick={() => setActiveTab("MESS")} className={`px-6 py-3 rounded-xl text-xs font-black uppercase transition-all ${activeTab === 'MESS' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>
-                    🏠 LIST MESS ({messList.length})
+                <button onClick={() => { setActiveTab("MESS"); setSearchTerm(""); }} className={`px-6 py-3 rounded-xl text-xs font-black uppercase transition-all ${activeTab === 'MESS' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>
+                    🏠 LIST MESS
                 </button>
-                <button onClick={() => setActiveTab("VEHICLE")} className={`px-6 py-3 rounded-xl text-xs font-black uppercase transition-all ${activeTab === 'VEHICLE' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>
-                    🚗 LIST KENDARAAN ({vehicleList.length})
+                <button onClick={() => { setActiveTab("VEHICLE"); setSearchTerm(""); }} className={`px-6 py-3 rounded-xl text-xs font-black uppercase transition-all ${activeTab === 'VEHICLE' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>
+                    🚗 LIST KENDARAAN
                 </button>
             </div>
 
             <div className="flex gap-2 items-center">
-                {/* TOMBOL PRINT (BARU) */}
-                <button onClick={() => window.print()} className="bg-slate-800 text-white px-4 py-3 rounded-xl text-xs font-bold hover:bg-black transition flex items-center gap-2 shadow-lg">
-                    🖨️ <span className="hidden md:inline">PRINT LAPORAN</span>
-                </button>
+                {/* TOMBOL CETAK SPESIFIK (HANYA MUNCUL DI TAB MESS) */}
+                <div className="flex gap-2">
+                    {activeTab === "MESS" && (
+                        <button onClick={handlePrintResidents} className="bg-emerald-600 text-white px-4 py-3 rounded-xl text-xs font-bold hover:bg-emerald-700 transition flex items-center gap-2 shadow-lg animate-in fade-in">
+                            📄 <span className="hidden md:inline">CETAK DATA PENGHUNI</span>
+                        </button>
+                    )}
+                    <button onClick={() => window.print()} className="bg-slate-800 text-white px-4 py-3 rounded-xl text-xs font-bold hover:bg-black transition flex items-center gap-2 shadow-lg">
+                        🖨️ <span className="hidden md:inline">PRINT LAYAR</span>
+                    </button>
+                </div>
 
-                {activeTab === "VEHICLE" && (
-                    <div className="relative w-full md:w-64 animate-in fade-in">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
-                        <input type="text" placeholder="Cari Mobil / Motor / PIC..." className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-slate-200 font-bold text-slate-700 text-xs focus:outline-none focus:border-blue-500 transition shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                    </div>
-                )}
+                {/* SEARCH BAR (SELALU MUNCUL TAPI PLACEHOLDER BERUBAH) */}
+                <div className="relative w-full md:w-64 animate-in fade-in">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                    <input 
+                        type="text" 
+                        placeholder={activeTab === 'MESS' ? "Cari Mess / PIC / Penghuni..." : "Cari Mobil / Motor / PIC..."} 
+                        className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-slate-200 font-bold text-slate-700 text-xs focus:outline-none focus:border-blue-500 transition shadow-sm" 
+                        value={searchTerm} 
+                        onChange={(e) => setSearchTerm(e.target.value)} 
+                    />
+                </div>
             </div>
         </div>
 
-        {/* === TAB 1: LIST MESS === */}
+        {/* CONTENT MIAN */}
         {activeTab === "MESS" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in print:grid-cols-2">
-                {messList.map((mess) => {
-                    const totalMotor = vehicleList.filter(v => v.mess_id === mess.id && v.jenis === 'MOTOR').length;
-                    const totalMobil = vehicleList.filter(v => v.mess_id === mess.id && v.jenis === 'MOBIL').length;
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in">
+                {finalMessList.map((mess) => {
                     const totalOrang = residentList.filter(r => r.mess_id === mess.id).length;
                     const totalKamar = mess.jumlah_kamar || 0;
-                    const isFull = totalOrang >= totalKamar && totalKamar > 0;
-
                     return (
                         <div key={mess.id} onClick={() => setSelectedMess(mess)} 
-                             className="bg-white rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:border-blue-300 hover:scale-[1.02] transition-all cursor-pointer group relative overflow-hidden flex flex-col h-full print:shadow-none print:border-black print:rounded-xl">
-                            
-                            <div className="relative h-32 bg-slate-200 flex items-center justify-center overflow-hidden print:grayscale">
-                                <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop" 
-                                     alt="Mess Building" className="absolute inset-0 w-full h-full object-cover opacity-80" />
+                             className="bg-white rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:border-blue-300 hover:scale-[1.02] transition-all cursor-pointer group relative overflow-hidden flex flex-col h-full">
+                            <div className="relative h-32 bg-slate-200 flex items-center justify-center overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop" alt="Mess" className="absolute inset-0 w-full h-full object-cover opacity-80" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent z-10"></div>
-                                
                                 <div className="absolute bottom-3 left-4 z-20">
                                     <h3 className="text-lg font-black text-white uppercase tracking-tight shadow-black drop-shadow-md">{mess.nama_mess}</h3>
                                     <p className="text-[10px] text-slate-300 font-medium">{mess.alamat || "Alamat belum diisi"}</p>
                                 </div>
-
                                 {role === 'mess_admin' && (
-                                    <div className="absolute top-3 right-3 z-30 flex gap-2 print:hidden">
+                                    <div className="absolute top-3 right-3 z-30 flex gap-2">
                                         <button onClick={(e) => openEditMess(mess, e)} className="w-8 h-8 bg-white/20 backdrop-blur-sm hover:bg-blue-600 hover:text-white rounded-full flex items-center justify-center transition shadow-lg text-white">✏️</button>
                                         <button onClick={(e) => { e.stopPropagation(); handleDelete('mess_locations', mess.id); }} className="w-8 h-8 bg-white/20 backdrop-blur-sm hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition shadow-lg text-white">🗑️</button>
                                     </div>
                                 )}
                             </div>
-
                             <div className="p-5 flex-1 flex flex-col justify-between">
                                 <div className="flex justify-between items-center mb-4">
-                                    <span className="bg-slate-100 text-slate-500 text-[10px] font-black px-2 py-1 rounded-lg uppercase print:bg-white print:border print:border-black print:text-black">PIC: {mess.pic_utama}</span>
-                                    <div className={`text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1 ${isFull ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'} print:bg-white print:border print:border-black print:text-black`}>
-                                        <span>🛏️</span>
-                                        <span>{totalOrang} / {totalKamar} Terisi</span>
+                                    <span className="bg-slate-100 text-slate-500 text-[10px] font-black px-2 py-1 rounded-lg uppercase">PIC: {mess.pic_utama}</span>
+                                    <div className={`text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1 ${totalOrang >= totalKamar ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                                        <span>🛏️</span><span>{totalOrang} / {totalKamar} Terisi</span>
                                     </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 border-t pt-3 border-slate-100 mt-auto">
-                                    <div className="text-center bg-blue-50 p-2 rounded-xl print:bg-white print:border print:border-black"><p className="text-[9px] text-blue-400 font-bold uppercase print:text-black">Mobil</p><p className="text-lg font-black text-blue-700 print:text-black">{totalMobil}</p></div>
-                                    <div className="text-center bg-green-50 p-2 rounded-xl print:bg-white print:border print:border-black"><p className="text-[9px] text-green-500 font-bold uppercase print:text-black">Motor</p><p className="text-lg font-black text-green-700 print:text-black">{totalMotor}</p></div>
                                 </div>
                             </div>
                         </div>
                     );
                 })}
+                {finalMessList.length === 0 && (
+                    <div className="col-span-full text-center py-10 text-slate-400 italic">Mess tidak ditemukan.</div>
+                )}
             </div>
         )}
 
-        {/* === TAB 2: LIST KENDARAAN === */}
+        {/* CONTENT KENDARAAN (SPLIT 2) */}
         {activeTab === "VEHICLE" && (
-            <div className="space-y-8">
-                <VehicleTable data={mobilList} title="DATA MOBIL PERUSAHAAN" icon="🚙" />
-                <VehicleTable data={motorList} title="DATA MOTOR PERUSAHAAN" icon="🏍️" />
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4">
+                <VehicleTable data={nonMessVehicles} title="KENDARAAN NON-MESS (PRIBADI/OPERASIONAL)" colorTheme="dark" />
+                <VehicleTable data={messVehicles} title="KENDARAAN DI LOKASI MESS" colorTheme="light" />
             </div>
         )}
 
       </div>
 
-      {/* === MODAL DETAIL MESS (HIDDEN WHEN PRINTING) === */}
+      {/* DETAIL MESS MODAL */}
       {selectedMess && (
           <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-in zoom-in-95 print:hidden">
               <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col">
@@ -360,7 +440,7 @@ export default function InventoryPage() {
           </div>
       )}
 
-      {/* === MODAL FORM (HIDDEN WHEN PRINTING) === */}
+      {/* MODAL FORM (TETAP ADA) */}
       {(showFormMess || showFormVehicle || showFormResident) && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm print:hidden">
               <div className="bg-white w-full max-w-lg p-8 rounded-[2rem] shadow-2xl animate-in slide-in-from-bottom-10">
