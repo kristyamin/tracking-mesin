@@ -77,7 +77,7 @@ export default function InventoryPage() {
 
   // MODAL STATE
   const [selectedMess, setSelectedMess] = useState<any>(null);
-  const [selectedVehicle, setSelectedVehicle] = useState<any>(null); // Popup Detail Kendaraan
+  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
   
   const [showFormMess, setShowFormMess] = useState(false); 
   const [showFormVehicle, setShowFormVehicle] = useState(false); 
@@ -121,7 +121,7 @@ export default function InventoryPage() {
 
   const handleRefresh = () => { fetchData(); };
 
-  // FORMAT TANGGAL INDONESIA
+  // FORMAT DATE INDO
   const formatDateIndo = (dateString: string) => {
       if (!dateString) return "-";
       return new Date(dateString).toLocaleDateString("id-ID", {
@@ -129,7 +129,7 @@ export default function InventoryPage() {
       });
   };
 
-  // INDICATOR WARNA
+  // INDICATOR
   const getStatusIndicator = (dateString: string, type: string) => {
       if (!dateString) return <span className="text-gray-300 text-[9px] font-mono">--</span>;
       const today = new Date();
@@ -265,7 +265,7 @@ export default function InventoryPage() {
       fetchData();
   };
 
-  // --- COMPONENT TABEL KENDARAAN ---
+  // --- COMPONENT TABEL KENDARAAN (UPDATED: SHOW PHONE NUMBER) ---
   const VehicleTable = ({ data, title, colorTheme }: any) => (
       <div className={`bg-white rounded-[2rem] border overflow-hidden shadow-sm flex flex-col h-full ${colorTheme === 'dark' ? 'border-slate-800' : 'border-slate-200'}`}>
           <div className={`p-4 border-b flex items-center gap-2 ${colorTheme === 'dark' ? 'bg-slate-800 text-white' : 'bg-slate-50 text-slate-700'}`}>
@@ -280,7 +280,14 @@ export default function InventoryPage() {
                       {data.map((v: any) => (
                           <tr key={v.id} onClick={() => setSelectedVehicle(v)} className="hover:bg-slate-50 transition cursor-pointer group">
                               <td className="p-3"><div className="flex items-center gap-2"><span className="text-xl">{v.jenis === 'MOBIL' ? '🚙' : '🏍️'}</span><div><p className="font-black text-slate-800 uppercase text-xs group-hover:text-blue-600 transition">{v.nama_kendaraan}</p><p className="font-bold text-white bg-slate-800 px-1.5 py-0.5 rounded-[4px] text-[9px] w-fit mt-1">{v.plat_nomor}</p></div></div></td>
-                              <td className="p-3"><p className="font-bold text-slate-700 text-[10px] uppercase">{v.mess_locations ? v.mess_locations.nama_mess : "NON-MESS"}</p><p className="text-[10px] text-slate-400">👤 {v.pic_kendaraan || "-"}</p></td>
+                              
+                              {/* KOLOM LOKASI & PIC (UPDATED) */}
+                              <td className="p-3">
+                                  <p className="font-bold text-slate-700 text-[10px] uppercase">{v.mess_locations ? v.mess_locations.nama_mess : "NON-MESS"}</p>
+                                  <p className="text-[10px] text-slate-500 font-bold mt-0.5">👤 {v.pic_kendaraan || "-"}</p>
+                                  {v.pic_kontak && <p className="text-[9px] text-emerald-600 font-mono mt-0.5">📞 {v.pic_kontak}</p>}
+                              </td>
+
                               <td className="p-3 space-y-1">
                                   <div>{getStatusIndicator(v.tgl_service, "Svc")}</div>
                                   <div>{getStatusIndicator(v.tgl_pajak, "5Th")}</div> 
@@ -339,7 +346,7 @@ export default function InventoryPage() {
                                 <th className="border border-black p-2 w-10 text-center">No</th>
                                 <th className="border border-black p-2">Nama Kendaraan</th>
                                 <th className="border border-black p-2 text-center">Plat Nomor</th>
-                                <th className="border border-black p-2">Lokasi / PIC</th>
+                                <th className="border border-black p-2">Lokasi / PIC / Kontak</th>
                                 <th className="border border-black p-2 text-center">Pajak (STNK)</th>
                                 <th className="border border-black p-2 text-center">Pajak 5Th (Plat)</th>
                                 <th className="border border-black p-2 text-center">Service</th>
@@ -356,7 +363,8 @@ export default function InventoryPage() {
                                     <td className="border border-black p-2 text-center font-mono">{v.plat_nomor}</td>
                                     <td className="border border-black p-2 uppercase text-xs">
                                         {v.mess_locations ? v.mess_locations.nama_mess : "NON-MESS"}<br/>
-                                        <span className="italic">{v.pic_kendaraan}</span>
+                                        <span className="font-bold">{v.pic_kendaraan}</span><br/>
+                                        <span className="italic text-[10px]">{v.pic_kontak}</span>
                                     </td>
                                     <td className="border border-black p-2 text-center text-xs">{v.tgl_pajak_tahunan ? formatDateIndo(v.tgl_pajak_tahunan) : "-"}</td>
                                     <td className="border border-black p-2 text-center text-xs">{v.tgl_pajak ? formatDateIndo(v.tgl_pajak) : "-"}</td>
@@ -442,7 +450,7 @@ export default function InventoryPage() {
         )}
       </div>
 
-      {/* MODAL DETAIL MESS (UPDATED: FIX DETAIL PENGHUNI) */}
+      {/* MODAL DETAIL MESS */}
       {selectedMess && (
           <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-in zoom-in-95 print:hidden">
               <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col">
@@ -482,7 +490,7 @@ export default function InventoryPage() {
           </div>
       )}
 
-      {/* POPUP DETAIL KENDARAAN (SAMA SEPERTI SEBELUMNYA) */}
+      {/* POPUP DETAIL KENDARAAN */}
       {selectedVehicle && (
           <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-in zoom-in-95 print:hidden">
               <div className="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden flex flex-col">
