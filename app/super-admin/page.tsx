@@ -97,54 +97,80 @@ export default function SuperAdminPage() {
       }
   };
 
-  // --- GROUPING LOGIC (UPDATE: TAMBAH MESS/HRD) ---
+  // --- LOGIKA BARU: HITUNG LOGIN BULANAN ---
+  const getMonthlyLoginCount = (loginCount: number, lastSeen: string | null) => {
+    if (!lastSeen) return 0; // Belum pernah login
+
+    const lastLoginDate = new Date(lastSeen);
+    const today = new Date();
+
+    // Cek apakah Login Terakhir dilakukan di Bulan & Tahun yang sama dengan hari ini?
+    const isSameMonth = lastLoginDate.getMonth() === today.getMonth();
+    const isSameYear = lastLoginDate.getFullYear() === today.getFullYear();
+
+    if (isSameMonth && isSameYear) {
+        // Jika masih di bulan yang sama, tampilkan jumlah aslinya
+        return loginCount;
+    } else {
+        // Jika bulan sudah beda (user belum login di bulan baru), tampilkan 0
+        // (Nanti saat user login lagi, database harus di-reset, lihat catatan di bawah)
+        return 0;
+    }
+  };
+
+  // --- GROUPING LOGIC ---
   const groupSuperAdmin = users.filter(u => u.role === 'super_admin');
   const groupBoss = users.filter(u => u.role === 'boss');
   const groupAdmin = users.filter(u => u.role === 'admin');
-  // Logic Baru: Gabungkan HRD (mess_admin) dan Viewer (mess_viewer) dalam satu grup
   const groupInventaris = users.filter(u => u.role === 'mess_admin' || u.role === 'mess_viewer');
 
   // Komponen Kartu User
-  const UserCard = ({ user, icon, colorClass, badgeColor, roleLabel }: any) => (
-    <div className={`bg-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 border border-slate-700 hover:border-${colorClass}-500 transition group shadow-lg relative overflow-hidden`}>
-        <div className={`absolute top-0 left-0 w-1 h-full bg-${colorClass}-500`}></div>
-        
-        <div className="flex items-center gap-5 w-full md:w-auto">
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold bg-slate-900 shadow-inner ${colorClass === 'purple' ? 'text-purple-400' : (colorClass === 'yellow' ? 'text-yellow-400' : (colorClass === 'green' ? 'text-green-400' : 'text-blue-400'))}`}>
-                {icon}
-            </div>
-            <div>
-                <div className="flex items-center gap-2">
-                    <p className="font-black text-xl text-white tracking-wide uppercase">{user.username}</p>
-                    {getOnlineStatus(user.last_seen)}
-                </div>
-                <div className="flex gap-2 mt-1">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${badgeColor}`}>
-                        {roleLabel || user.role}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
-                        Logins: {user.login_count || 0}x
-                    </span>
-                </div>
-            </div>
-        </div>
+  const UserCard = ({ user, icon, colorClass, badgeColor, roleLabel }: any) => {
+    // Hitung login bulanan
+    const monthlyLogins = getMonthlyLoginCount(user.login_count || 0, user.last_seen);
 
-        <div className="flex items-center gap-4 w-full md:w-auto justify-end">
-            <div className="flex flex-col text-right mr-4">
-                <span className="text-[10px] text-slate-500 font-bold uppercase">Password</span>
-                <span className="font-mono text-slate-300 bg-black/30 px-3 py-1 rounded-lg border border-slate-700/50">
-                    {user.password}
-                </span>
+    return (
+        <div className={`bg-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 border border-slate-700 hover:border-${colorClass}-500 transition group shadow-lg relative overflow-hidden`}>
+            <div className={`absolute top-0 left-0 w-1 h-full bg-${colorClass}-500`}></div>
+            
+            <div className="flex items-center gap-5 w-full md:w-auto">
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold bg-slate-900 shadow-inner ${colorClass === 'purple' ? 'text-purple-400' : (colorClass === 'yellow' ? 'text-yellow-400' : (colorClass === 'green' ? 'text-green-400' : 'text-blue-400'))}`}>
+                    {icon}
+                </div>
+                <div>
+                    <div className="flex items-center gap-2">
+                        <p className="font-black text-xl text-white tracking-wide uppercase">{user.username}</p>
+                        {getOnlineStatus(user.last_seen)}
+                    </div>
+                    <div className="flex gap-2 mt-1">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${badgeColor}`}>
+                            {roleLabel || user.role}
+                        </span>
+                        {/* UPDATE DISPLAY LOGIN COUNT */}
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border border-slate-700 ${monthlyLogins > 0 ? 'bg-blue-900 text-blue-300' : 'bg-slate-900 text-slate-500'}`}>
+                            Logins Bulan Ini: {monthlyLogins}x
+                        </span>
+                    </div>
+                </div>
             </div>
-            <button onClick={() => handleEditClick(user)} className="bg-slate-700 hover:bg-blue-600 text-white p-3 rounded-xl transition shadow-md">
-                ✏️
-            </button>
-            <button onClick={() => handleDelete(user.id)} className="bg-slate-700 hover:bg-red-600 text-white p-3 rounded-xl transition shadow-md">
-                🗑️
-            </button>
+
+            <div className="flex items-center gap-4 w-full md:w-auto justify-end">
+                <div className="flex flex-col text-right mr-4">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase">Password</span>
+                    <span className="font-mono text-slate-300 bg-black/30 px-3 py-1 rounded-lg border border-slate-700/50">
+                        {user.password}
+                    </span>
+                </div>
+                <button onClick={() => handleEditClick(user)} className="bg-slate-700 hover:bg-blue-600 text-white p-3 rounded-xl transition shadow-md">
+                    ✏️
+                </button>
+                <button onClick={() => handleDelete(user.id)} className="bg-slate-700 hover:bg-red-600 text-white p-3 rounded-xl transition shadow-md">
+                    🗑️
+                </button>
+            </div>
         </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <main className="min-h-screen bg-slate-950 p-6 font-sans text-slate-200 pb-20">
@@ -206,7 +232,7 @@ export default function SuperAdminPage() {
             </div>
         )}
 
-        {/* --- GROUP 4: INVENTARIS / HRD (BARU) --- */}
+        {/* --- GROUP 4: INVENTARIS / HRD --- */}
         {!loading && groupInventaris.length > 0 && (
             <div className="mb-10 animate-in fade-in slide-in-from-bottom duration-1000">
                 <h3 className="text-green-500 font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2">

@@ -15,9 +15,10 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState("");
   
   // --- STATE MODAL ---
-  const [selectedDetail, setSelectedDetail] = useState<string | null>(null); // Untuk pop-up foto detail
-  const [showLoginModal, setShowLoginModal] = useState(false); // Untuk login staff
-  const [showIOSGuide, setShowIOSGuide] = useState(false); // Untuk panduan iPhone
+  const [selectedDetail, setSelectedDetail] = useState<string | null>(null); 
+  const [showLoginModal, setShowLoginModal] = useState(false); 
+  const [showIOSGuide, setShowIOSGuide] = useState(false); 
+  const [showAndroidGuide, setShowAndroidGuide] = useState(false); // Modal Android
   
   // --- STATE LOGIN ---
   const [creds, setCreds] = useState({ username: "", password: "" });
@@ -70,7 +71,7 @@ export default function Home() {
       }
   };
 
-  // 2. LOGIKA LOGIN STAFF
+  // 2. LOGIKA LOGIN STAFF (SUDAH DI-UPDATE UNTUK RESET BULANAN) ✅
   const handleOpenLogin = () => {
       setCreds({ username: "", password: "" });
       setShowPassword(false);
@@ -93,7 +94,22 @@ export default function Home() {
         alert("❌ Login Gagal! Username atau Password salah.");
         setCreds({ username: "", password: "" });
       } else {
-        const newCount = (data.login_count || 0) + 1;
+        // --- LOGIKA RESET BULANAN ---
+        const lastSeenDate = data.last_seen ? new Date(data.last_seen) : new Date(0);
+        const today = new Date();
+        
+        const isSameMonth = lastSeenDate.getMonth() === today.getMonth() && lastSeenDate.getFullYear() === today.getFullYear();
+
+        let newCount;
+        if (isSameMonth) {
+            // Masih bulan yang sama, tambah 1
+            newCount = (data.login_count || 0) + 1;
+        } else {
+            // Sudah ganti bulan, RESET jadi 1
+            newCount = 1;
+        }
+
+        // Update ke Database
         await supabase.from("users").update({
             login_count: newCount,
             last_seen: new Date().toISOString()
@@ -101,6 +117,7 @@ export default function Home() {
 
         sessionStorage.setItem("user_role", data.role);
 
+        // Redirect sesuai Role
         if (data.role === "admin") {
           router.push("/admin");
         } else if (data.role === "boss") {
@@ -160,13 +177,13 @@ export default function Home() {
                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-3 tracking-widest text-center">Install</p>
                 <div className="grid grid-cols-2 gap-3">
                     
-                    {/* TOMBOL ANDROID (DIPERBAIKI) */}
-                    <a href="/djitoe-app.apk" download className="flex flex-col items-center justify-center bg-green-50 text-green-600 border border-green-200 py-3 px-2 rounded-xl hover:bg-green-600 hover:text-white transition-all cursor-pointer text-center group">
+                    {/* TOMBOL ANDROID (MEMBUKA MODAL PANDUAN) */}
+                    <button onClick={() => setShowAndroidGuide(true)} className="flex flex-col items-center justify-center bg-green-50 text-green-600 border border-green-200 py-3 px-2 rounded-xl hover:bg-green-600 hover:text-white transition-all cursor-pointer text-center group">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" className="w-7 h-7 mb-1 group-hover:scale-110 transition pointer-events-none">
                           <path d="M420.55,301.93a24,24,0,1,1,24-24,24,24,0,0,1-24,24m-265.1,0a24,24,0,1,1,24-24,24,24,0,0,1-24,24m273.7-144.48,47.94-83a10,10,0,1,0-17.32-10h0L413.66,144.4a286.43,286.43,0,0,0-251.32,0L116.14,64.44a10,10,0,1,0-17.32,10h0l47.94,83C64.53,202.22,8.24,285.55,0,384H576c-8.24-98.45-64.53-181.78-146.85-226.55"/>
                         </svg>
                         <p className="text-[9px] font-black uppercase pointer-events-none">Android</p>
-                    </a>
+                    </button>
 
                     {/* TOMBOL IPHONE */}
                     <button onClick={() => setShowIOSGuide(true)} className="flex flex-col items-center justify-center bg-slate-50 text-slate-800 border border-slate-200 py-3 px-2 rounded-xl hover:bg-slate-800 hover:text-white transition-all cursor-pointer text-center group">
@@ -182,7 +199,7 @@ export default function Home() {
             {errorMsg && <div className="mt-6 p-4 bg-red-50 rounded-2xl text-red-500 text-xs font-bold text-center border border-red-100 animate-pulse">{errorMsg}</div>}
             
             <div className="mt-8 text-center">
-                <p className="text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.0</p>
+                <p className="text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.3</p>
                 <p className="text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">WWW.DJITOEMESINDO.COM</p>
             </div>
           </div>
@@ -299,7 +316,6 @@ export default function Home() {
             <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-xs shadow-2xl relative border-2 border-white text-center">
               <button onClick={() => setShowIOSGuide(false)} className="absolute top-4 right-4 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-bold">✕</button>
               <div className="text-5xl mb-4">
-                  {/* SVG Logo Apple Besar untuk Modal */}
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" className="w-16 h-16 mx-auto text-slate-800">
                     <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-46.6-35.5-4.6-86.7 18.1-110.6 18.1-23.9 0-67.3-20.9-101.2-19.4-49.2 1.8-88.7 26.9-113.3 69.5-40.5 69.4-10.5 172.2 29.2 229.6 19.2 27.9 40.9 58.4 70.5 58.4 28.1 0 38.6-18.1 72.3-18.1 34.2 0 43.7 18.1 73.5 18.1 29.2 0 47.7-25.5 65.8-51.1 20.4-28.6 28.8-41.2 32.1-42.4-17.9-7.7-31.2-23.6-33.6-49.3zM248.3 52.3c22.4-26.9 37.6-64.1 33.4-101.2-32.1 2.5-71.3 21.1-94.2 48-20.6 24.1-38.6 61.9-33.4 98.9 35.8 2.8 72.5-19.1 94.2-45.7z"/>
                   </svg>
@@ -323,6 +339,45 @@ export default function Home() {
               </div>
               
               <button onClick={() => setShowIOSGuide(false)} className="w-full bg-slate-900 text-white py-3 rounded-xl font-black mt-6 hover:bg-black transition-all text-xs uppercase">Got It</button>
+            </div>
+          </div>
+        )}
+
+        {/* === MODAL 5 (BARU): PANDUAN ANDROID === */}
+        {showAndroidGuide && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-in fade-in">
+            <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-xs shadow-2xl relative border-2 border-white text-center">
+              <button onClick={() => setShowAndroidGuide(false)} className="absolute top-4 right-4 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-bold">✕</button>
+              
+              {/* Icon Android Hijau */}
+              <div className="text-5xl mb-4 text-green-600 flex justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" className="w-16 h-16">
+                    <path d="M420.55,301.93a24,24,0,1,1,24-24,24,24,0,0,1-24,24m-265.1,0a24,24,0,1,1,24-24,24,24,0,0,1-24,24m273.7-144.48,47.94-83a10,10,0,1,0-17.32-10h0L413.66,144.4a286.43,286.43,0,0,0-251.32,0L116.14,64.44a10,10,0,1,0-17.32,10h0l47.94,83C64.53,202.22,8.24,285.55,0,384H576c-8.24-98.45-64.53-181.78-146.85-226.55"/>
+                  </svg>
+              </div>
+
+              <h3 className="text-xl font-black text-slate-800 mb-2 uppercase">Install Android</h3>
+              <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                To install the app on Android, please download the APK file and install it manually on your device.
+              </p>
+
+              {/* Instruksi Singkat */}
+              <div className="space-y-4 text-left bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
+                  <div className="flex gap-3 items-center">
+                      <span className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                      <p className="text-xs font-bold text-slate-700">Press the button <span className="font-black text-green-600">Download</span>.</p>
+                  </div>
+                  <div className="flex gap-3 items-center">
+                      <span className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                      <p className="text-xs font-bold text-slate-700">After the file is downloaded, <span className="font-black text-green-600">Install</span> and then skip the app scan</p>
+                  </div>
+              </div>
+
+              {/* TOMBOL DOWNLOAD APK ASLI */}
+              <a href="/djitoe-app.apk" download className="block w-full bg-green-600 text-white py-3 rounded-xl font-black hover:bg-green-700 transition-all text-xs uppercase shadow-lg shadow-green-200">
+                DOWNLOAD APK HERE
+              </a>
+
             </div>
           </div>
         )}
