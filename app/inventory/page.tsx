@@ -56,7 +56,7 @@ export default function InventoryPage() {
   const router = useRouter();
   const [role, setRole] = useState("");
   // --- DEFAULT TAB: SEARCH (BIAR LANGSUNG KEREN PAS BUKA) ---
-  const [activeTab, setActiveTab] = useState<"SEARCH" | "MESS" | "VEHICLE" | "IT" | "UNIFORM" | "APAR">("SEARCH");
+  const [activeTab, setActiveTab] = useState<"SEARCH" | "MESS" | "VEHICLE" | "IT" | "UNIFORM" | "APAR">("MESS");
   const [loading, setLoading] = useState(true);
   
   // PRINT STATE
