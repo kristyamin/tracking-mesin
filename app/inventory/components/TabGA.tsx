@@ -154,7 +154,7 @@ export default function TabGA({
                         <div className="flex gap-2 mt-2">
                             <div className={`flex-1 p-2 rounded-lg text-center border ${emp.has_issue ? 'bg-orange-50 border-orange-100' : 'bg-green-50 border-green-100'}`}>
                                 <p className={`text-[9px] font-bold uppercase ${emp.has_issue ? 'text-orange-400' : 'text-green-600'}`}>List Pakaian</p>
-                                <p className={`text-sm font-black ${emp.has_issue ? 'text-orange-700' : 'text-green-700'}`}>{emp.has_issue ? `${emp.ga_items.filter((i:any) => i.status === 'DIPINJAM').length} Item` : 'CLEAR'}</p>
+                                <p className={`text-sm font-black ${emp.has_issue ? 'text-orange-700' : 'text-green-700'}`}>{emp.has_issue ? `${emp.ga_items.filter((i:any) => i.status === 'DIPINJAM').length} Item` : 'TIDAK ADA'}</p>
                             </div>
                             {(emp.vehicle_items.length > 0 || emp.it_items.length > 0) && (
                                 <div className="flex-1 bg-blue-50 p-2 rounded-lg text-center border border-blue-100">

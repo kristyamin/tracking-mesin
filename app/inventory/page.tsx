@@ -27,12 +27,12 @@ const CustomSelectMess = ({ options, value, onChange, placeholder }: any) => {
   return (
     <div className="relative w-full" ref={wrapperRef}>
       <button onClick={() => setIsOpen(!isOpen)} className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-left flex justify-between items-center focus:outline-none focus:border-blue-500 transition"><span className={`text-sm font-bold ${selectedItem ? "text-slate-800" : "text-slate-400"}`}>{selectedItem ? `📍 ${selectedItem.nama_mess}` : placeholder}</span><span className="text-xs text-slate-400">▼</span></button>
-      {isOpen && (<div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto animate-in fade-in zoom-in-95">{options.length === 0 ? (<div className="p-3 text-xs text-slate-400 italic text-center">Data Kosong</div>) : (options.map((opt: any) => (<div key={opt.id} onClick={() => { onChange(opt.id); setIsOpen(false); }} className={`p-3 text-sm font-bold cursor-pointer hover:bg-blue-50 transition border-b border-slate-50 last:border-0 ${value === opt.id ? "bg-blue-100 text-blue-700" : "text-slate-700"}`}>📍 {opt.nama_mess}</div>)))}</div>)}
+      {isOpen && (<div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto animate-in fade-in zoom-in-95 custom-scrollbar">{options.length === 0 ? (<div className="p-3 text-xs text-slate-400 italic text-center">Data Kosong</div>) : (options.map((opt: any) => (<div key={opt.id} onClick={() => { onChange(opt.id); setIsOpen(false); }} className={`p-3 text-sm font-bold cursor-pointer hover:bg-blue-50 transition border-b border-slate-50 last:border-0 ${value === opt.id ? "bg-blue-100 text-blue-700" : "text-slate-700"}`}>📍 {opt.nama_mess}</div>)))}</div>)}
     </div>
   );
 };
 
-// --- CUSTOM SELECT STOCK (BARU: BIAR BISA SCROLL 4 ITEM) ---
+// --- CUSTOM SELECT COMPONENT (STOCK - SCROLLABLE) ---
 const CustomSelectStock = ({ options, value, onChange, placeholder }: any) => {
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -55,8 +55,8 @@ const CustomSelectStock = ({ options, value, onChange, placeholder }: any) => {
 export default function InventoryPage() {
   const router = useRouter();
   const [role, setRole] = useState("");
-  // --- DEFAULT TAB: SEARCH (BIAR LANGSUNG KEREN PAS BUKA) ---
-  const [activeTab, setActiveTab] = useState<"SEARCH" | "MESS" | "VEHICLE" | "IT" | "UNIFORM" | "APAR">("MESS");
+  // DEFAULT TAB: MESS (Supaya login langsung lihat data)
+  const [activeTab, setActiveTab] = useState<"MESS" | "VEHICLE" | "IT" | "UNIFORM" | "APAR" | "SEARCH">("MESS");
   const [loading, setLoading] = useState(true);
   
   // PRINT STATE
@@ -72,14 +72,14 @@ export default function InventoryPage() {
   const [uniformStockList, setUniformStockList] = useState<any[]>([]);
   const [uniformLoanList, setUniformLoanList] = useState<any[]>([]);
   const [aparList, setAparList] = useState<any[]>([]);
-  const [employeeList, setEmployeeList] = useState<any[]>([]); // DATA MASTER KARYAWAN
+  const [employeeList, setEmployeeList] = useState<any[]>([]); // Data Master
 
   // VIEW STATE
   const [searchTerm, setSearchTerm] = useState("");
 
   // MODAL STATE
   const [selectedMess, setSelectedMess] = useState<any>(null);
-  const [selectedVehicle, setSelectedVehicle] = useState<any>(null); // PENTING BUAT CARD VEHICLE
+  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
   
   // MODAL FORM STATE
   const [showFormMess, setShowFormMess] = useState(false); 
@@ -90,11 +90,9 @@ export default function InventoryPage() {
   const [showFormLoan, setShowFormLoan] = useState(false);
   const [showFormAPAR, setShowFormAPAR] = useState(false);
   
-  // IMPORT EXCEL STATE
+  // IMPORT & RETURN STATE
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState("");
-
-  // RETURN GA STATE
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [selectedLoanToReturn, setSelectedLoanToReturn] = useState<any>(null);
   const [returnCondition, setReturnCondition] = useState<"LAYAK" | "RUSAK">("LAYAK");
@@ -145,7 +143,7 @@ export default function InventoryPage() {
     else return <span className="bg-green-50 text-green-600 px-2 py-0.5 rounded text-[9px] font-bold border border-green-200">🟢 OK ({type})</span>;
   };
 
-  // PRINT
+  // --- LOGIKA CETAK (PRINT) ---
   const handlePrintResidents = () => { setReportType("RESIDENT"); setIsReportMode(true); setTimeout(() => { window.print(); }, 500); };
   const handlePrintVehicles = (type: string) => { setReportType("VEHICLE"); setVehicleReportCategory(type); setIsReportMode(true); setTimeout(() => { window.print(); }, 500); };
   const handlePrintIT = () => { setReportType("IT"); setIsReportMode(true); setTimeout(() => { window.print(); }, 500); };
@@ -154,11 +152,10 @@ export default function InventoryPage() {
   const finalITList = itList.filter(item => { if(!searchTerm) return true; const term = searchTerm.toLowerCase(); return item.device_name?.toLowerCase().includes(term) || item.current_holder?.toLowerCase().includes(term); });
   const finalVehicleList = vehicleList.filter(v => { if(!searchTerm) return true; const term = searchTerm.toLowerCase(); return v.nama_kendaraan?.toLowerCase().includes(term) || v.plat_nomor?.toLowerCase().includes(term); });
 
-  // CRUD GENERIC
+  // CRUD HANDLERS
   const handleDelete = async (table: string, id: number) => { if (!confirm("⚠️ Yakin hapus data ini selamanya?")) return; await supabase.from(table).delete().eq("id", id); fetchData(); };
 
   // --- 🔥 FUNGSI SAPU JAGAT (GLOBAL RESIGN) 🔥 ---
-  // Digunakan di TabSearch & TabGA
   const handleGlobalResign = async (profile: any) => {
       setLoading(true);
       const name = profile.name;
@@ -202,6 +199,16 @@ export default function InventoryPage() {
       fetchData();
   };
 
+  const handleProcessImport = async () => {
+      if (!importText.trim()) return alert("Data kosong! Paste dulu datanya.");
+      const rows = importText.trim().split("\n");
+      const cleanData: any[] = [];
+      rows.forEach(row => { const cols = row.split("\t"); if (cols.length >= 1) { const nama = cols[0]?.trim().toUpperCase(); const nik = cols[1]?.trim() || ""; const divisi = cols[2]?.trim().toUpperCase() || ""; if (nama) cleanData.push({ nama, nik, divisi }); } });
+      if (cleanData.length === 0) return alert("Format salah. Pastikan copy NAMA (Tab) NIK");
+      const { error } = await supabase.from("company_employees").insert(cleanData);
+      if (error) alert("Gagal Import: " + error.message); else { alert(`✅ Berhasil Import ${cleanData.length} Karyawan!`); setShowImportModal(false); setImportText(""); fetchData(); }
+  };
+
   // OPENERS
   const openAddMess = () => { setEditingMessId(null); setFormMessData({ nama: "", pic: "", alamat: "", kamar: "", ac: "" }); setShowFormMess(true); };
   const openEditMess = (mess: any, e: any) => { e.stopPropagation(); setEditingMessId(mess.id); setFormMessData({ nama: mess.nama_mess, pic: mess.pic_utama, alamat: mess.alamat, kamar: mess.jumlah_kamar, ac: mess.tgl_cuci_ac || "" }); setShowFormMess(true); };
@@ -211,7 +218,12 @@ export default function InventoryPage() {
   const openEditIT = (item: any) => { setEditingITId(item.id); setFormITData({ device: item.device_name, category: item.category, status: item.status, holder: item.current_holder || "", nik: item.nik || "", dept: item.department || "" }); setShowFormIT(true); };
   const openAddStock = () => { setEditingStockId(null); setFormStockData({ item: "", size: "", total: "" }); setShowFormStock(true); };
   const openEditStock = (item: any) => { setEditingStockId(item.id); setFormStockData({ item: item.item_name, size: item.size, total: item.total_stock }); setShowFormStock(true); };
-  const openLoanForm = (existingName = "", existingNik = "") => { setFormLoanData({ employee: existingName || "", nik: existingNik || "", stock_id: "", qty: 1, notes: "" }); setShowFormLoan(true); };
+  
+  const openLoanForm = (existingName = "", existingNik = "") => {
+      setFormLoanData({ employee: existingName || "", nik: existingNik || "", stock_id: "", qty: 1, notes: "" });
+      setShowFormLoan(true);
+  };
+  
   const openReturnModal = (loan: any) => { setSelectedLoanToReturn(loan); setReturnCondition("LAYAK"); setShowReturnModal(true); };
   const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({ no: "", loc: "", type: "POWDER", kg: "", exp: "", cond: "BAIK" }); setShowFormAPAR(true); };
   const openEditAPAR = (item: any) => { setEditingAPARId(item.id); setFormAPARData({ no: item.nomor_tabung, loc: item.lokasi, type: item.jenis, kg: item.berat_kg, exp: item.tgl_exp || "", cond: item.kondisi }); setShowFormAPAR(true); };
@@ -226,20 +238,74 @@ export default function InventoryPage() {
   const handleReturnItem = async () => { if (!selectedLoanToReturn) return; await supabase.from("uniform_loans").update({ status: 'DIKEMBALIKAN', return_date: new Date().toISOString(), return_condition: returnCondition }).eq("id", selectedLoanToReturn.id); if (returnCondition === "LAYAK") { const currentStock = uniformStockList.find(s => s.id === selectedLoanToReturn.stock_id); if (currentStock) { await supabase.from("uniform_stocks").update({ total_stock: currentStock.total_stock + 1 }).eq("id", currentStock.id); } } alert("✅ Barang Telah Dikembalikan!"); setShowReturnModal(false); fetchData(); };
   const handleSaveAPAR = async () => { if (!formAPARData.no) return alert("Nomor Tabung Wajib!"); const payload = { nomor_tabung: formAPARData.no.toUpperCase(), lokasi: formAPARData.loc.toUpperCase(), jenis: formAPARData.type, berat_kg: parseFloat(formAPARData.kg) || 0, tgl_exp: formAPARData.exp || null, kondisi: formAPARData.cond }; if (editingAPARId) await supabase.from("apar_assets").update(payload).eq("id", editingAPARId); else await supabase.from("apar_assets").insert(payload); alert("✅ Data APAR Saved!"); setShowFormAPAR(false); fetchData(); };
 
-  const handleProcessImport = async () => {
-      if (!importText.trim()) return alert("Data kosong! Paste dulu datanya.");
-      const rows = importText.trim().split("\n");
-      const cleanData: any[] = [];
-      rows.forEach(row => { const cols = row.split("\t"); if (cols.length >= 1) { const nama = cols[0]?.trim().toUpperCase(); const nik = cols[1]?.trim() || ""; const divisi = cols[2]?.trim().toUpperCase() || ""; if (nama) cleanData.push({ nama, nik, divisi }); } });
-      if (cleanData.length === 0) return alert("Format salah. Pastikan copy NAMA (Tab) NIK");
-      const { error } = await supabase.from("company_employees").insert(cleanData);
-      if (error) alert("Gagal Import: " + error.message); else { alert(`✅ Berhasil Import ${cleanData.length} Karyawan!`); setShowImportModal(false); setImportText(""); fetchData(); }
-  };
+  // --- TAMPILAN MODE LAPORAN (PRINT) ---
+  if (isReportMode) {
+    return (
+        <div className="bg-white min-h-screen p-8 font-sans text-black">
+            <div className="print:hidden mb-6 flex justify-between items-center bg-slate-100 p-4 rounded-xl">
+                <p className="font-bold text-slate-700">Mode Cetak: {reportType}</p>
+                <button onClick={() => setIsReportMode(false)} className="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700 transition">❌ KEMBALI</button>
+            </div>
+            <div className="text-center mb-8 border-b-2 border-black pb-4">
+                <h1 className="text-2xl font-black uppercase tracking-widest">PT DJITOE MESINDO</h1>
+                <h2 className="text-xl font-bold uppercase mt-1">LAPORAN {reportType === 'RESIDENT' ? 'PENGHUNI MESS' : (reportType === 'UNIFORM' ? 'GA / SERAGAM' : `ASET ${reportType === 'VEHICLE' ? vehicleReportCategory : 'IT & LAPTOP'}`)}</h2>
+                <p className="text-sm mt-2">Dicetak pada: {new Date().toLocaleDateString("id-ID", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+
+            {reportType === "RESIDENT" && (
+                <div className="space-y-8">
+                    {messList.map((mess) => {
+                        const residents = residentList.filter(r => r.mess_id === mess.id);
+                        if (residents.length === 0) return null; 
+                        return (
+                            <div key={mess.id} className="break-inside-avoid">
+                                <div className="flex justify-between items-end mb-2 border-b border-black pb-1"><h3 className="font-black text-lg uppercase">📍 {mess.nama_mess}</h3><p className="text-xs font-mono">{mess.alamat}</p></div>
+                                <table className="w-full text-left text-sm border-collapse border border-black">
+                                    <thead><tr className="bg-gray-200 text-black"><th className="border border-black p-2 w-10 text-center">No</th><th className="border border-black p-2">Nama</th><th className="border border-black p-2">NIK</th><th className="border border-black p-2">Jabatan</th><th className="border border-black p-2 text-center">Kamar</th><th className="border border-black p-2">HP</th></tr></thead>
+                                    <tbody>{residents.map((r, idx) => (<tr key={r.id}><td className="border border-black p-2 text-center">{idx + 1}</td><td className="border border-black p-2 font-bold uppercase">{r.nama_karyawan}</td><td className="border border-black p-2 font-mono">{r.nik || "-"}</td><td className="border border-black p-2">{r.jabatan || "-"}</td><td className="border border-black p-2 text-center">{r.kamar_no || "-"}</td><td className="border border-black p-2">{r.no_hp || "-"}</td></tr>))}</tbody>
+                                </table>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {reportType === "VEHICLE" && (
+                <table className="w-full text-left text-sm border-collapse border border-black">
+                    <thead><tr className="bg-gray-200 text-black"><th className="border border-black p-2 w-10 text-center">No</th><th className="border border-black p-2">Nama Kendaraan</th><th className="border border-black p-2 text-center">Plat Nomor</th><th className="border border-black p-2">Lokasi / PIC / Kontak</th><th className="border border-black p-2 text-center">Pajak</th><th className="border border-black p-2 text-center">Service</th></tr></thead>
+                    <tbody>{finalVehicleList.filter(v => v.jenis === vehicleReportCategory).map((v, idx) => (<tr key={v.id}><td className="border border-black p-2 text-center">{idx + 1}</td><td className="border border-black p-2 uppercase font-bold">{v.nama_kendaraan}</td><td className="border border-black p-2 text-center font-mono">{v.plat_nomor}</td><td className="border border-black p-2 uppercase text-xs">{v.mess_locations ? v.mess_locations.nama_mess : "NON-MESS"}<br/>{v.pic_kendaraan}</td><td className="border border-black p-2 text-center text-xs">{v.tgl_pajak ? formatDateIndo(v.tgl_pajak) : "-"}</td><td className="border border-black p-2 text-center text-xs">{v.tgl_service ? formatDateIndo(v.tgl_service) : "-"}</td></tr>))}</tbody>
+                </table>
+            )}
+
+            {reportType === "IT" && (
+                <table className="w-full text-left text-sm border-collapse border border-black">
+                    <thead><tr className="bg-gray-200 text-black"><th className="border border-black p-2 w-10 text-center">No</th><th className="border border-black p-2">Nama Perangkat</th><th className="border border-black p-2">Kategori</th><th className="border border-black p-2">Pengguna</th><th className="border border-black p-2">NIK</th><th className="border border-black p-2">Divisi</th><th className="border border-black p-2 text-center">Status</th></tr></thead>
+                    <tbody>{finalITList.map((item, idx) => (<tr key={item.id}><td className="border border-black p-2 text-center">{idx + 1}</td><td className="border border-black p-2 uppercase font-bold">{item.device_name}</td><td className="border border-black p-2 uppercase text-xs">{item.category}</td><td className="border border-black p-2 uppercase">{item.current_holder || "-"}</td><td className="border border-black p-2 font-mono">{item.nik || "-"}</td><td className="border border-black p-2 uppercase">{item.department || "-"}</td><td className="border border-black p-2 text-center font-bold text-xs">{item.status}</td></tr>))}</tbody>
+                </table>
+            )}
+
+            {reportType === "UNIFORM" && (
+                <div className="space-y-6">
+                    <div className="border border-black p-4 mb-4 bg-slate-50"><h3 className="font-bold uppercase text-sm mb-2">REKAP STOK GUDANG:</h3><div className="grid grid-cols-3 gap-2 text-xs">{uniformStockList.map(s => (<div key={s.id} className="flex justify-between border-b border-gray-300 pb-1"><span>{s.item_name} ({s.size})</span><span className="font-bold">{s.total_stock} Pcs</span></div>))}</div></div>
+                    <h3 className="font-bold uppercase border-b-2 border-black pb-2">DATA PEMINJAMAN AKTIF:</h3>
+                    <table className="w-full text-left text-sm border-collapse border border-black">
+                        <thead><tr className="bg-gray-200 text-black"><th className="border border-black p-2 w-10 text-center">No</th><th className="border border-black p-2">Nama Karyawan</th><th className="border border-black p-2">NIK</th><th className="border border-black p-2">Barang</th><th className="border border-black p-2 text-center">Size</th><th className="border border-black p-2 text-center">Tgl Pinjam</th><th className="border border-black p-2">Status</th></tr></thead>
+                        <tbody>{uniformLoanList.filter(l => l.status === 'DIPINJAM').map((l, idx) => (<tr key={l.id}><td className="border border-black p-2 text-center">{idx + 1}</td><td className="border border-black p-2 uppercase font-bold">{l.employee_name}</td><td className="border border-black p-2 font-mono">{l.employee_nik || "-"}</td><td className="border border-black p-2 uppercase">{l.item_name_cached}</td><td className="border border-black p-2 text-center">{l.size_cached}</td><td className="border border-black p-2 text-center">{formatDateIndo(l.created_at)}</td><td className="border border-black p-2 text-center font-bold text-red-600">DIPINJAM</td></tr>))}</tbody>
+                    </table>
+                </div>
+            )}
+
+            <div className="mt-16 flex justify-end print:mt-10 break-inside-avoid"><div className="text-center w-64"><p className="mb-16">Mengetahui,</p><p className="font-bold underline uppercase">( ....................................... )</p><p className="text-xs mt-1">HRD / Pimpinan</p></div></div>
+        </div>
+    );
+  }
 
   // --- TAMPILAN UTAMA ---
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 p-4 md:p-8 print:bg-white print:p-0">
       <div className="max-w-7xl mx-auto">
+        
+        {/* HEADER (JUDUL & TOMBOL ATAS) */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 print:mb-4">
             <div><h1 className="text-2xl md:text-3xl font-black text-slate-800 uppercase tracking-tighter text-center md:text-left">GA & HRD CENTER</h1><p className="text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-widest mt-1 text-center md:text-left">PT DJITOE MESINDO - ASSET & FACILITY</p></div>
             <div className="flex flex-wrap gap-2 justify-center print:hidden">
@@ -257,29 +323,50 @@ export default function InventoryPage() {
             </div>
         </div>
 
-        {/* TAB NAVIGATION (SEARCH DI DEPAN) */}
+        {/* NAVIGASI TAB & SEARCH BAR */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 print:hidden">
+            
+            {/* BAGIAN KIRI: TOMBOL TAB */}
             <div className="flex gap-2 bg-white p-1 rounded-2xl w-full overflow-x-auto shadow-sm border border-slate-200 no-scrollbar">
-                
-                {/* 🔍 GLOBAL SEARCH (TAB BARU) */}
-                <button onClick={() => { setActiveTab("SEARCH"); setSearchTerm(""); }} className={`flex-1 min-w-[130px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'SEARCH' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>🔍 PENCARIAN</button>
-                
+                <button onClick={() => { setActiveTab("SEARCH"); setSearchTerm(""); }} className={`flex-1 min-w-[130px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'SEARCH' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>🔍 PENELUSURAN</button>
                 <button onClick={() => { setActiveTab("MESS"); setSearchTerm(""); }} className={`flex-1 min-w-[100px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'MESS' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>🏠 MESS</button>
                 <button onClick={() => { setActiveTab("VEHICLE"); setSearchTerm(""); }} className={`flex-1 min-w-[120px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'VEHICLE' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>🚗 KENDARAAN</button>
                 <button onClick={() => { setActiveTab("IT"); setSearchTerm(""); }} className={`flex-1 min-w-[100px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'IT' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>💻 IT ASSETS</button>
                 <button onClick={() => { setActiveTab("UNIFORM"); setSearchTerm(""); }} className={`flex-1 min-w-[120px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'UNIFORM' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>👕 SERAGAM/GA</button>
                 <button onClick={() => { setActiveTab("APAR"); setSearchTerm(""); }} className={`flex-1 min-w-[100px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'APAR' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>🔥 APAR</button>
+
             </div>
             
-            {/* SEARCH BOX HANYA MUNCUL SELAIN TAB SEARCH */}
-            {activeTab !== "SEARCH" && (
-                <div className="relative w-full md:w-64 animate-in fade-in"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span><input type="text" placeholder="Cari Data..." className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-slate-200 font-bold text-slate-700 text-xs focus:outline-none focus:border-blue-500 transition shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
-            )}
+            {/* BAGIAN KANAN: INPUT SEARCH & TOMBOL CETAK */}
+            <div className="flex flex-col md:flex-row gap-2 items-center w-full md:w-auto justify-end mt-4 md:mt-0">
+                
+                {/* TOMBOL CETAK (HANYA MUNCUL DI TAB MESS) */}
+                {activeTab === "MESS" && (
+                    <button 
+                        onClick={handlePrintResidents} 
+                        className="bg-emerald-600 text-white px-4 py-3 rounded-xl text-xs font-bold hover:bg-emerald-700 transition flex items-center gap-2 shadow-lg animate-in fade-in"
+                    >
+                        📄 <span className="hidden md:inline">CETAK PENGHUNI</span>
+                    </button>
+                )}
+
+                {/* INPUT SEARCH (HILANG KALAU LAGI DI TAB SEARCH) */}
+                {activeTab !== "SEARCH" && (
+                    <div className="relative w-full md:w-64 animate-in fade-in">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                        <input 
+                            type="text" 
+                            placeholder="Cari Data..." 
+                            className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-slate-200 font-bold text-slate-700 text-xs focus:outline-none focus:border-blue-500 transition shadow-sm" 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)} 
+                        />
+                    </div>
+                )}
+            </div>
         </div>
 
-        {/* --- RENDER COMPONENTS --- */}
-        
-        {/* 🔥 TAB SEARCH BARU 🔥 */}
+        {/* --- RENDER COMPONENTS (ISI TAB) --- */}
         {activeTab === "SEARCH" && (
             <TabSearch 
                 employees={employeeList}
@@ -291,7 +378,7 @@ export default function InventoryPage() {
                 role={role}
                 onResign={handleGlobalResign}
                 onMoveMess={handleMoveMess}
-                onReturnGA={openReturnModal} 
+                onReturnGA={openReturnModal}
                 onSwitchTab={(tabName: any) => { setActiveTab(tabName); setSearchTerm(""); }}
             />
         )}
