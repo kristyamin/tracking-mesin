@@ -275,8 +275,21 @@ const handlePrintGA = (loc: any) => {
   // OPENERS
   const openAddMess = () => { setEditingMessId(null); setFormMessData({ nama: "", pic: "", alamat: "", kamar: "", ac: "" }); setShowFormMess(true); };
   const openEditMess = (mess: any, e: any) => { e.stopPropagation(); setEditingMessId(mess.id); setFormMessData({ nama: mess.nama_mess, pic: mess.pic_utama, alamat: mess.alamat, kamar: mess.jumlah_kamar, ac: mess.tgl_cuci_ac || "" }); setShowFormMess(true); };
-  const openAddVehicle = () => { setEditingVehicleId(null); setFormVehicleData({ mess_id: "", jenis: "MOBIL", nama: "", plat: "", pic: "", nik: "", kontak: "", pajak: "", pajak_tahunan: "", service: "", oli: "" }); setShowFormVehicle(true); };
-const openEditVehicle = (v: any) => {setEditingVehicleId(v.id); setFormVehicleData({
+  const openAddVehicle = () => { setEditingVehicleId(null); setFormVehicleData({ 
+          mess_id: "", 
+          jenis: "MOBIL", 
+          nama: "", 
+          plat: "", 
+          pic: "", 
+          nik: "", 
+          kontak: "", 
+          pajak: "", 
+          service: "", 
+          oli: "", 
+          pic_kontak: "", 
+          lokasi: "TANJUNG UNCANG" }); setShowFormVehicle(true); };
+
+  const openEditVehicle = (v: any) => {setEditingVehicleId(v.id); setFormVehicleData({
           mess_id: v.mess_id,
           jenis: v.jenis,
           nama: v.nama_kendaraan,
@@ -287,6 +300,7 @@ const openEditVehicle = (v: any) => {setEditingVehicleId(v.id); setFormVehicleDa
           oli: v.tgl_ganti_oli,
           pic_kontak: v.pic_kontak || "",
           lokasi: v.lokasi || "TANJUNG UNCANG"}); setShowFormVehicle(true);};
+          
   const openAddIT = () => { setEditingITId(null); setFormITData({ device: "", category: "LAPTOP", status: "TERSEDIA", holder: "", nik: "", dept: "" }); setShowFormIT(true); };
   const openEditIT = (item: any) => { setEditingITId(item.id); setFormITData({ device: item.device_name, category: item.category, status: item.status, holder: item.current_holder || "", nik: item.nik || "", dept: item.department || "" }); setShowFormIT(true); };
   const openEditStock = (item: any) => { setEditingStockId(item.id); setFormStockData({ item: item.item_name, size: item.size, total: item.total_stock,lokasi: item.lokasi || "TANJUNG UNCANG" }); setShowFormStock(true);};
