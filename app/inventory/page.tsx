@@ -783,14 +783,45 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
         {/* NAVIGASI TAB & SEARCH BAR */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 print:hidden">
             
-            {/* BAGIAN KIRI: TOMBOL TAB */}
-            <div className="flex gap-2 bg-white p-1 rounded-2xl w-full overflow-x-auto shadow-sm border border-slate-200 no-scrollbar">
-                <button onClick={() => { setActiveTab("SEARCH"); setSearchTerm(""); }} className={`flex-1 min-w-[130px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'SEARCH' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>🔍 PENELUSURAN</button>
-                <button onClick={() => { setActiveTab("MESS"); setSearchTerm(""); }} className={`flex-1 min-w-[100px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'MESS' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>🏠 MESS</button>
-                <button onClick={() => { setActiveTab("VEHICLE"); setSearchTerm(""); }} className={`flex-1 min-w-[120px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'VEHICLE' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>🚗 KENDARAAN</button>
-                <button onClick={() => { setActiveTab("IT"); setSearchTerm(""); }} className={`flex-1 min-w-[100px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'IT' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>💻 IT ASSETS</button>
-                <button onClick={() => { setActiveTab("UNIFORM"); setSearchTerm(""); }} className={`flex-1 min-w-[120px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'UNIFORM' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>👕 SERAGAM/GA</button>
-                <button onClick={() => { setActiveTab("APAR"); setSearchTerm(""); }} className={`flex-1 min-w-[100px] px-4 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all whitespace-nowrap ${activeTab === 'APAR' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>🔥 APAR</button>
+    
+        {/* TOMBOL TAB (MODEL GRID DI HP, BARIS DI LAPTOP) */}
+            <div className="grid grid-cols-3 md:flex gap-2 bg-white p-2 md:p-1 rounded-2xl w-full shadow-sm border border-slate-200">
+                
+                <button onClick={() => { setActiveTab("SEARCH"); setSearchTerm(""); }} 
+                    className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${activeTab === 'SEARCH' ? 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-200' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
+                    <span className="text-sm md:text-base">🔍</span>
+                    <span>CARI</span>
+                </button>
+
+                <button onClick={() => { setActiveTab("MESS"); setSearchTerm(""); }} 
+                    className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${activeTab === 'MESS' ? 'bg-slate-800 text-white shadow-lg ring-2 ring-slate-200' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
+                    <span className="text-sm md:text-base">🏠</span>
+                    <span>MESS</span>
+                </button>
+
+                <button onClick={() => { setActiveTab("VEHICLE"); setSearchTerm(""); }} 
+                    className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${activeTab === 'VEHICLE' ? 'bg-slate-800 text-white shadow-lg ring-2 ring-slate-200' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
+                    <span className="text-sm md:text-base">🚗</span>
+                    <span>KENDARAAN</span>
+                </button>
+
+                <button onClick={() => { setActiveTab("IT"); setSearchTerm(""); }} 
+                    className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${activeTab === 'IT' ? 'bg-slate-800 text-white shadow-lg ring-2 ring-slate-200' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
+                    <span className="text-sm md:text-base">💻</span>
+                    <span>IT ASET</span>
+                </button>
+
+                <button onClick={() => { setActiveTab("UNIFORM"); setSearchTerm(""); }} 
+                    className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${activeTab === 'UNIFORM' ? 'bg-slate-800 text-white shadow-lg ring-2 ring-slate-200' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
+                    <span className="text-sm md:text-base">👕</span>
+                    <span>GA</span>
+                </button>
+
+                <button onClick={() => { setActiveTab("APAR"); setSearchTerm(""); }} 
+                    className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${activeTab === 'APAR' ? 'bg-slate-800 text-white shadow-lg ring-2 ring-slate-200' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
+                    <span className="text-sm md:text-base">🔥</span>
+                    <span>APAR</span>
+                </button>
 
             </div>
             
