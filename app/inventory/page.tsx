@@ -61,7 +61,7 @@ export default function InventoryPage() {
   
   // PRINT STATE
   const [isReportMode, setIsReportMode] = useState(false);
-  const [reportType, setReportType] = useState<"RESIDENT" | "VEHICLE" | "IT" | "UNIFORM">("RESIDENT");
+  const [reportType, setReportType] = useState<"RESIDENT" | "VEHICLE" | "IT" | "UNIFORM" | "APAR">("RESIDENT");
   const [vehicleReportCategory, setVehicleReportCategory] = useState("");
   const [printLocationFilter, setPrintLocationFilter] = useState(""); // Wadah untuk lokasi print
 
@@ -109,12 +109,12 @@ export default function InventoryPage() {
 
   // INPUT STATES
   const [formMessData, setFormMessData] = useState({ nama: "", pic: "", alamat: "", kamar: "", ac: "" });
-  const [formVehicleData, setFormVehicleData] = useState({ mess_id: "", jenis: "MOBIL", nama: "", plat: "", pic: "", nik: "", kontak: "", pajak: "", pajak_tahunan: "", service: "", oli: "" });
+  const [formVehicleData, setFormVehicleData] = useState({ mess_id: "", jenis: "MOBIL", nama: "", plat: "", pic: "", nik: "", kontak: "", pic_kontak: "", pajak: "", pajak_tahunan: "", service: "", oli: "", lokasi: "" });
   const [formResidentData, setFormResidentData] = useState({ mess_id: "", nama: "", nik: "", hp: "", kamar: "", jabatan: "" });
-  const [formITData, setFormITData] = useState({ device: "", category: "LAPTOP", status: "TERSEDIA", holder: "", nik: "", dept: "" });
-  const [formStockData, setFormStockData] = useState({ item: "", size: "", total: "" });
+  const [formITData, setFormITData] = useState({ device: "", category: "LAPTOP", status: "TERSEDIA", holder: "", nik: "", dept: "", lokasi: "" });
+  const [formStockData, setFormStockData] = useState({ item: "", size: "", total: "", lokasi: "" });
   const [formLoanData, setFormLoanData] = useState({ employee: "", nik: "", stock_id: "", qty: 1, notes: "" });
-  const [formAPARData, setFormAPARData] = useState({ no: "", loc: "", type: "POWDER", kg: "", exp: "", cond: "BAIK" });
+  const [formAPARData, setFormAPARData] = useState({ no: "", loc: "", type: "POWDER", kg: "", exp: "", cond: "BAIK", lokasi: ""});
 
   useEffect(() => {
     const userRole = sessionStorage.getItem("user_role");
@@ -276,7 +276,23 @@ const handlePrintGA = (loc: any) => {
   const openAddMess = () => { setEditingMessId(null); setFormMessData({ nama: "", pic: "", alamat: "", kamar: "", ac: "" }); setShowFormMess(true); };
   const openEditMess = (mess: any, e: any) => { e.stopPropagation(); setEditingMessId(mess.id); setFormMessData({ nama: mess.nama_mess, pic: mess.pic_utama, alamat: mess.alamat, kamar: mess.jumlah_kamar, ac: mess.tgl_cuci_ac || "" }); setShowFormMess(true); };
   const openAddVehicle = () => { setEditingVehicleId(null); setFormVehicleData({ mess_id: "", jenis: "MOBIL", nama: "", plat: "", pic: "", nik: "", kontak: "", pajak: "", pajak_tahunan: "", service: "", oli: "" }); setShowFormVehicle(true); };
-  const openEditVehicle = (vehicle: any, e: any) => { e.stopPropagation(); setEditingVehicleId(vehicle.id); setFormVehicleData({ mess_id: vehicle.mess_id || "", jenis: vehicle.jenis, nama: vehicle.nama_kendaraan, plat: vehicle.plat_nomor, pic: vehicle.pic_kendaraan, nik: vehicle.pic_nik, kontak: vehicle.pic_kontak, pajak: vehicle.tgl_pajak || "", pajak_tahunan: vehicle.tgl_pajak_tahunan || "", service: vehicle.tgl_service || "", oli: vehicle.tgl_ganti_oli || "" }); setShowFormVehicle(true); };
+  const openEditVehicle = (vehicle: any, e: any) => { e.stopPropagation(); setEditingVehicleId(vehicle.id); setFormVehicleData({ 
+          mess_id: vehicle.mess_id || "", 
+          jenis: vehicle.jenis, 
+          nama: vehicle.nama_kendaraan, 
+          plat: vehicle.plat_nomor, 
+          pic: vehicle.pic_kendaraan, 
+          nik: vehicle.pic_nik, 
+          kontak: vehicle.pic_kontak, 
+          pic_kontak: vehicle.pic_kontak || "", 
+          pajak: vehicle.tgl_pajak || "", 
+          pajak_tahunan: vehicle.tgl_pajak_tahunan || "", 
+          service: vehicle.tgl_service || "", 
+          oli: vehicle.tgl_ganti_oli || "",
+          lokasi: vehicle.lokasi || "TANJUNG UNCANG" 
+      }); 
+      setShowFormVehicle(true);
+    };
   const openAddIT = () => { setEditingITId(null); setFormITData({ device: "", category: "LAPTOP", status: "TERSEDIA", holder: "", nik: "", dept: "" }); setShowFormIT(true); };
   const openEditIT = (item: any) => { setEditingITId(item.id); setFormITData({ device: item.device_name, category: item.category, status: item.status, holder: item.current_holder || "", nik: item.nik || "", dept: item.department || "" }); setShowFormIT(true); };
   const openEditStock = (item: any) => { setEditingStockId(item.id); setFormStockData({ item: item.item_name, size: item.size, total: item.total_stock }); setShowFormStock(true); };
