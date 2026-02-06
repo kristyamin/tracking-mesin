@@ -112,7 +112,7 @@ export default function InventoryPage() {
   const [formVehicleData, setFormVehicleData] = useState({ mess_id: "", jenis: "MOBIL", nama: "", plat: "", pic: "", nik: "", kontak: "", pajak: "", pajak_tahunan: "", service: "", oli: "" });
   const [formResidentData, setFormResidentData] = useState({ mess_id: "", nama: "", nik: "", hp: "", kamar: "", jabatan: "" });
   const [formITData, setFormITData] = useState({ device: "", category: "LAPTOP", status: "TERSEDIA", holder: "", nik: "", dept: "" });
-  const [formStockData, setFormStockData] = useState({ item: "", size: "", total: "" });
+  const [formStockData, setFormStockData] = useState({ item: "", size: "", total: "", lokasi: "" });
   const [formLoanData, setFormLoanData] = useState({ employee: "", nik: "", stock_id: "", qty: 1, notes: "" });
   const [formAPARData, setFormAPARData] = useState({ no: "", loc: "", type: "POWDER", kg: "", exp: "", cond: "BAIK" });
 
