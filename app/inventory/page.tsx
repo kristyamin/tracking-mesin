@@ -310,8 +310,18 @@ const handlePrintGA = (loc: any) => {
       }); 
       setShowFormVehicle(true);
     };
-  const openAddIT = () => { setEditingITId(null); setFormITData({ device: "", category: "LAPTOP", status: "TERSEDIA", holder: "", nik: "", dept: "" }); setShowFormIT(true); };
-  const openEditIT = (item: any) => { 
+   const openAddIT = () => { setEditingITId(null); setFormITData({ 
+          device: "", 
+          category: "LAPTOP", 
+          status: "TERSEDIA", 
+          holder: "", 
+          nik: "", 
+          dept: "", 
+          lokasi: "TANJUNG UNCANG" 
+      }); 
+      setShowFormIT(true); 
+  };
+    const openEditIT = (item: any) => { 
       setEditingITId(item.id); 
       setFormITData({ 
           device: item.device_name, 
