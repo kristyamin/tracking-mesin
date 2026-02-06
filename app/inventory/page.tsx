@@ -61,7 +61,7 @@ export default function InventoryPage() {
   
   // PRINT STATE
   const [isReportMode, setIsReportMode] = useState(false);
-  const [reportType, setReportType] = useState<"RESIDENT" | "VEHICLE" | "IT" | "UNIFORM">("RESIDENT");
+  const [reportType, setReportType] = useState<"RESIDENT" | "VEHICLE" | "IT" | "UNIFORM" | "APAR">("RESIDENT");
   const [vehicleReportCategory, setVehicleReportCategory] = useState("");
   const [printLocationFilter, setPrintLocationFilter] = useState(""); // Wadah untuk lokasi print
 
