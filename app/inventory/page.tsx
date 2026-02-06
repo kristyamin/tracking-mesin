@@ -311,40 +311,28 @@ const handlePrintGA = (loc: any) => {
       setShowFormVehicle(true);
     };
   const openAddIT = () => { setEditingITId(null); setFormITData({ device: "", category: "LAPTOP", status: "TERSEDIA", holder: "", nik: "", dept: "" }); setShowFormIT(true); };
-  const openEditIT = (item: any) => { setEditingITId(item.id); setFormITData({ device: item.device_name, category: item.category, status: item.status, holder: item.current_holder || "", nik: item.nik || "", dept: item.department || "" }); setShowFormIT(true); };
-  const openEditStock = (item: any) => { setEditingStockId(item.id); setFormStockData({ item: item.item_name, size: item.size, total: item.total_stock }); setShowFormStock(true); };
-const openAddStock = (loc: any = "TANJUNG UNCANG") => { 
-      // Cek: Kalau loc-nya berupa teks (misal: "SEKUPANG"), pakai itu.
-      // Kalau bukan (misal event klik), balik ke default "TANJUNG UNCANG".
-      const targetLoc = typeof loc === 'string' ? loc : "TANJUNG UNCANG";
-      
-      setEditingStockId(null); 
-      // 👇 Kuncinya di sini: lokasi diisi targetLoc
-      setFormStockData({ item: "", size: "", total: "", lokasi: targetLoc }); 
-      setShowFormStock(true); 
-  };
-  
+  const openEditIT = (item: any) => { 
+      setEditingITId(item.id); 
+      setFormITData({ 
+          device: item.device_name, 
+          category: item.category, 
+          status: item.status, 
+          holder: item.current_holder || "", 
+          nik: item.nik || "", 
+          dept: item.department || "",
+          lokasi: item.lokasi || "TANJUNG UNCANG" 
+      }); 
+      setShowFormIT(true); };  
 
-  const openLoanForm = (existingName = "", existingNik = "") => {
-      setFormLoanData({ employee: existingName || "", nik: existingNik || "", stock_id: "", qty: 1, notes: "" });
-      setShowFormLoan(true);
-  };
-  
+  const openEditStock = (item: any) => { setEditingStockId(item.id); setFormStockData({ item: item.item_name, size: item.size, total: item.total_stock }); setShowFormStock(true); };
+  const openAddStock = (loc: any = "TANJUNG UNCANG") => { 
+  const targetLoc = typeof loc === 'string' ? loc : "TANJUNG UNCANG";setEditingStockId(null); setFormStockData({ item: "", size: "", total: "", lokasi: targetLoc }); setShowFormStock(true); };
+  const openLoanForm = (existingName = "", existingNik = "") => {setFormLoanData({ employee: existingName || "", nik: existingNik || "", stock_id: "", qty: 1, notes: "" });setShowFormLoan(true);};
   const openReturnModal = (loan: any) => { setSelectedLoanToReturn(loan); setReturnCondition("LAYAK"); setShowReturnModal(true); };
   const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({ no: "", loc: "", type: "POWDER", kg: "", exp: "", cond: "BAIK" }); setShowFormAPAR(true); };
   const openEditAPAR = (item: any) => { setEditingAPARId(item.id); setFormAPARData({ no: item.nomor_tabung, loc: item.lokasi, type: item.jenis, kg: item.berat_kg, exp: item.tgl_exp || "", cond: item.kondisi }); setShowFormAPAR(true); };
-
- // --- SAVE HANDLERS (SUDAH DIPERBAIKI AGAR LOKASI MASUK) ---
-
-  const handleSaveMess = async () => { 
-      if (!formMessData.nama) return alert("Nama Mess Wajib!"); 
-      const payload = { nama_mess: formMessData.nama, pic_utama: formMessData.pic, alamat: formMessData.alamat, jumlah_kamar: parseInt(formMessData.kamar) || 0, tgl_cuci_ac: formMessData.ac || null }; 
-      if (editingMessId) await supabase.from("mess_locations").update(payload).eq("id", editingMessId); 
-      else await supabase.from("mess_locations").insert(payload); 
-      setShowFormMess(false); 
-      fetchData(); 
-  };
-
+  const handleSaveMess = async () => { if (!formMessData.nama) return alert("Nama Mess Wajib!"); 
+  const payload = { nama_mess: formMessData.nama, pic_utama: formMessData.pic, alamat: formMessData.alamat, jumlah_kamar: parseInt(formMessData.kamar) || 0, tgl_cuci_ac: formMessData.ac || null }; if (editingMessId) await supabase.from("mess_locations").update(payload).eq("id", editingMessId); else await supabase.from("mess_locations").insert(payload); setShowFormMess(false); fetchData(); };
   const handleSaveVehicle = async () => { 
       if (!formVehicleData.plat || !formVehicleData.nama) return alert("Nama & Plat Wajib!"); 
       const payload = { 
