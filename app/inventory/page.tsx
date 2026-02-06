@@ -334,10 +334,25 @@ const handlePrintGA = (loc: any) => {
       }); 
       setShowFormIT(true); };  
 
-  const openEditStock = (item: any) => { setEditingStockId(item.id); setFormStockData({ item: item.item_name, size: item.size, total: item.total_stock }); setShowFormStock(true); };
+const openEditStock = (item: any) => { setEditingStockId(item.id); setFormStockData({ 
+          item: item.item_name, 
+          size: item.size, 
+          total: item.total_stock, 
+          lokasi: item.lokasi || "TANJUNG UNCANG" 
+      }); 
+      setShowFormStock(true); 
+  }
+
   const openAddStock = (loc: any = "TANJUNG UNCANG") => { 
-  const targetLoc = typeof loc === 'string' ? loc : "TANJUNG UNCANG";setEditingStockId(null); setFormStockData({ item: "", size: "", total: "", lokasi: targetLoc }); setShowFormStock(true); };
-  const openLoanForm = (existingName = "", existingNik = "") => {setFormLoanData({ employee: existingName || "", nik: existingNik || "", stock_id: "", qty: 1, notes: "" });setShowFormLoan(true);};
+const targetLoc = typeof loc === 'string' ? loc : "TANJUNG UNCANG";setEditingStockId(null); setFormStockData({ 
+          item: "", 
+          size: "", 
+          total: "", 
+          lokasi: targetLoc 
+      }); 
+      setShowFormStock(true); 
+  };
+    const openLoanForm = (existingName = "", existingNik = "") => {setFormLoanData({ employee: existingName || "", nik: existingNik || "", stock_id: "", qty: 1, notes: "" });setShowFormLoan(true);};
   const openReturnModal = (loan: any) => { setSelectedLoanToReturn(loan); setReturnCondition("LAYAK"); setShowReturnModal(true); };
   const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({ no: "", loc: "", type: "POWDER", kg: "", exp: "", cond: "BAIK" }); setShowFormAPAR(true); };
   const openEditAPAR = (item: any) => { setEditingAPARId(item.id); setFormAPARData({ no: item.nomor_tabung, loc: item.lokasi, type: item.jenis, kg: item.berat_kg, exp: item.tgl_exp || "", cond: item.kondisi }); setShowFormAPAR(true); };
@@ -357,7 +372,7 @@ const handlePrintGA = (loc: any) => {
           tgl_pajak_tahunan: formVehicleData.pajak_tahunan || null, 
           tgl_service: formVehicleData.service || null, 
           tgl_ganti_oli: formVehicleData.oli || null, 
-          lokasi: formVehicleData.lokasi // ✅ Lokasi (Sekupang/Tj Uncang) Masuk Sini
+          lokasi: formVehicleData.lokasi 
       }; 
       if (editingVehicleId) await supabase.from("mess_vehicles").update(payload).eq("id", editingVehicleId); 
       else await supabase.from("mess_vehicles").insert(payload); 
