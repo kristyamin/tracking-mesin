@@ -226,7 +226,7 @@ const handlePrintGA = (loc: any) => {
           // Update
           await supabase.from('mess_residents').update({ mess_id: newMessId, kamar_no: newKamar }).eq('id', existing.id);
       } else {
-          // Insert Baru (Kalau sebelumnya hantu)
+          // Insert Baru 
           await supabase.from('mess_residents').insert({ mess_id: newMessId, kamar_no: newKamar, nama_karyawan: name });
       }
       alert("✅ Berhasil pindah mess!");
@@ -245,14 +245,11 @@ const handlePrintGA = (loc: any) => {
               const nama = cols[0]?.trim().toUpperCase(); 
               const nik = cols[1]?.trim() || ""; 
               const divisi = cols[2]?.trim().toUpperCase() || ""; 
-              
-              if (nama) {
-                  // 👇 NAH INI DIA KUNCINYA BEB! Masukkan lokasinya
-                  cleanData.push({ 
+          if (nama) {  cleanData.push({ 
                       nama, 
                       nik, 
-                      divisi, // atau department (sesuaikan nama kolom di DB)
-                      lokasi: importTargetLoc // 👈 PENTING BANGET
+                      divisi, 
+                      lokasi: importTargetLoc 
                   }); 
               } 
           } 
@@ -354,8 +351,29 @@ const targetLoc = typeof loc === 'string' ? loc : "TANJUNG UNCANG";setEditingSto
   };
     const openLoanForm = (existingName = "", existingNik = "") => {setFormLoanData({ employee: existingName || "", nik: existingNik || "", stock_id: "", qty: 1, notes: "" });setShowFormLoan(true);};
   const openReturnModal = (loan: any) => { setSelectedLoanToReturn(loan); setReturnCondition("LAYAK"); setShowReturnModal(true); };
-  const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({ no: "", loc: "", type: "POWDER", kg: "", exp: "", cond: "BAIK" }); setShowFormAPAR(true); };
-  const openEditAPAR = (item: any) => { setEditingAPARId(item.id); setFormAPARData({ no: item.nomor_tabung, loc: item.lokasi, type: item.jenis, kg: item.berat_kg, exp: item.tgl_exp || "", cond: item.kondisi }); setShowFormAPAR(true); };
+const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({ 
+          no: "", 
+          loc: "", 
+          type: "POWDER", 
+          kg: "", 
+          exp: "", 
+          cond: "BAIK", 
+          lokasi: "TANJUNG UNCANG" 
+      }); 
+      setShowFormAPAR(true); 
+  };
+
+  const openEditAPAR = (item: any) => { setEditingAPARId(item.id); setFormAPARData({ 
+          no: item.nomor_tabung, 
+          loc: item.detail_lokasi, 
+          type: item.jenis, 
+          kg: item.berat_kg, 
+          exp: item.tgl_exp || "", 
+          cond: item.kondisi, 
+          lokasi: item.lokasi || "TANJUNG UNCANG" 
+      }); 
+      setShowFormAPAR(true); 
+  };
   const handleSaveMess = async () => { if (!formMessData.nama) return alert("Nama Mess Wajib!"); 
   const payload = { nama_mess: formMessData.nama, pic_utama: formMessData.pic, alamat: formMessData.alamat, jumlah_kamar: parseInt(formMessData.kamar) || 0, tgl_cuci_ac: formMessData.ac || null }; if (editingMessId) await supabase.from("mess_locations").update(payload).eq("id", editingMessId); else await supabase.from("mess_locations").insert(payload); setShowFormMess(false); fetchData(); };
   const handleSaveVehicle = async () => { 
