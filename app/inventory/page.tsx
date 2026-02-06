@@ -790,7 +790,7 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                 <button onClick={() => { setActiveTab("SEARCH"); setSearchTerm(""); }} 
                     className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${activeTab === 'SEARCH' ? 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-200' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
                     <span className="text-sm md:text-base">🔍</span>
-                    <span>CARI</span>
+                    <span>PENELUSURAN</span>
                 </button>
 
                 <button onClick={() => { setActiveTab("MESS"); setSearchTerm(""); }} 
@@ -814,7 +814,7 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                 <button onClick={() => { setActiveTab("UNIFORM"); setSearchTerm(""); }} 
                     className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${activeTab === 'UNIFORM' ? 'bg-slate-800 text-white shadow-lg ring-2 ring-slate-200' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
                     <span className="text-sm md:text-base">👕</span>
-                    <span>GA</span>
+                    <span>SERAGAM</span>
                 </button>
 
                 <button onClick={() => { setActiveTab("APAR"); setSearchTerm(""); }} 

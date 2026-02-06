@@ -105,7 +105,7 @@ export default function TabIT({ data, role, onAdd, onEdit, onDelete, onPrint, se
                         onClick={() => onPrint(selectedLoc)} 
                         className="bg-slate-100 text-slate-600 p-2 rounded-lg text-xs font-bold hover:bg-slate-200 flex items-center gap-2"
                       >
-                          🖨️ <span className="hidden md:inline">LIST</span>
+                          🖨️ <span className="hidden md:inline">CETAK</span>
                       </button>
                   )}
               </div>

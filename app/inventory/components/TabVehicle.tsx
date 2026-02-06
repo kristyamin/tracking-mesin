@@ -108,7 +108,7 @@ export default function TabVehicle({ vehicleList, role, onSelectVehicle, onEdit,
                         onClick={() => onPrint(selectedType, selectedLoc)} 
                         className="bg-slate-100 text-slate-600 px-3 py-2 rounded-lg text-xs font-bold hover:bg-slate-200 flex items-center gap-2"
                       >
-                          🖨️ <span className="hidden md:inline">LIST</span>
+                          🖨️ <span className="hidden md:inline">CETAK</span>
                       </button>
                   )}
               </div>

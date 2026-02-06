@@ -199,7 +199,7 @@ export default function Home() {
             {errorMsg && <div className="mt-6 p-4 bg-red-50 rounded-2xl text-red-500 text-xs font-bold text-center border border-red-100 animate-pulse">{errorMsg}</div>}
             
             <div className="mt-8 text-center">
-                <p className="text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.3</p>
+                <p className="text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">Djitoe Mesindo System V1.5</p>
                 <p className="text-gray-300 text-[9px] font-bold tracking-[0.2em] uppercase">WWW.DJITOEMESINDO.COM</p>
             </div>
           </div>
