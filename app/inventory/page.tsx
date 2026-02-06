@@ -275,7 +275,24 @@ const handlePrintGA = (loc: any) => {
   // OPENERS
   const openAddMess = () => { setEditingMessId(null); setFormMessData({ nama: "", pic: "", alamat: "", kamar: "", ac: "" }); setShowFormMess(true); };
   const openEditMess = (mess: any, e: any) => { e.stopPropagation(); setEditingMessId(mess.id); setFormMessData({ nama: mess.nama_mess, pic: mess.pic_utama, alamat: mess.alamat, kamar: mess.jumlah_kamar, ac: mess.tgl_cuci_ac || "" }); setShowFormMess(true); };
-  const openAddVehicle = () => { setEditingVehicleId(null); setFormVehicleData({ mess_id: "", jenis: "MOBIL", nama: "", plat: "", pic: "", nik: "", kontak: "", pajak: "", pajak_tahunan: "", service: "", oli: "" }); setShowFormVehicle(true); };
+  const openAddVehicle = () => { setEditingVehicleId(null); setFormVehicleData({ 
+          mess_id: "", 
+          jenis: "MOBIL", 
+          nama: "", 
+          plat: "", 
+          pic: "", 
+          nik: "", 
+          kontak: "", 
+          pic_kontak: "",      
+          pajak: "", 
+          pajak_tahunan: "",   
+          service: "", 
+          oli: "", 
+          lokasi: "TANJUNG UNCANG" 
+      }); 
+      setShowFormVehicle(true); 
+  };
+
   const openEditVehicle = (vehicle: any, e: any) => { e.stopPropagation(); setEditingVehicleId(vehicle.id); setFormVehicleData({ 
           mess_id: vehicle.mess_id || "", 
           jenis: vehicle.jenis, 
