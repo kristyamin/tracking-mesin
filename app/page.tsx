@@ -143,8 +143,7 @@ export default function Home() {
         
         {/* === TAMPILAN 1: FORM PENCARIAN (HOME) === */}
         {searchResults.length === 0 && (
-          <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-8 border border-white relative animate-in fade-in zoom-in-95 duration-500">
-            
+<div className="bg-white/95 backdrop-blur-sm rounded-[2.5rem] shadow-[0_0_50px_-12px_rgba(99,102,241,0.4)] overflow-hidden p-8 border border-white/20 relative animate-in fade-in zoom-in duration-500">            
             <button onClick={handleOpenLogin} className="absolute top-6 right-6 p-2 rounded-full text-gray-300 hover:text-blue-600 transition-all text-2xl" title="Staff Login">🔐</button>
             
             <div className="flex justify-center mb-6 mt-4">
