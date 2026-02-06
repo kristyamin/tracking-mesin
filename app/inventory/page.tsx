@@ -109,7 +109,7 @@ export default function InventoryPage() {
 
   // INPUT STATES
   const [formMessData, setFormMessData] = useState({ nama: "", pic: "", alamat: "", kamar: "", ac: "" });
-  const [formVehicleData, setFormVehicleData] = useState({ mess_id: "", jenis: "MOBIL", nama: "", plat: "", pic: "", nik: "", kontak: "", pajak: "", pajak_tahunan: "", service: "", oli: "" });
+  const [formVehicleData, setFormVehicleData] = useState({ mess_id: "", jenis: "MOBIL", nama: "", plat: "", pic: "", nik: "", kontak: "", pajak: "", pajak_tahunan: "", service: "", oli: "", lokasi: "" });
   const [formResidentData, setFormResidentData] = useState({ mess_id: "", nama: "", nik: "", hp: "", kamar: "", jabatan: "" });
   const [formITData, setFormITData] = useState({ device: "", category: "LAPTOP", status: "TERSEDIA", holder: "", nik: "", dept: "" });
   const [formStockData, setFormStockData] = useState({ item: "", size: "", total: "", lokasi: "" });
@@ -276,7 +276,17 @@ const handlePrintGA = (loc: any) => {
   const openAddMess = () => { setEditingMessId(null); setFormMessData({ nama: "", pic: "", alamat: "", kamar: "", ac: "" }); setShowFormMess(true); };
   const openEditMess = (mess: any, e: any) => { e.stopPropagation(); setEditingMessId(mess.id); setFormMessData({ nama: mess.nama_mess, pic: mess.pic_utama, alamat: mess.alamat, kamar: mess.jumlah_kamar, ac: mess.tgl_cuci_ac || "" }); setShowFormMess(true); };
   const openAddVehicle = () => { setEditingVehicleId(null); setFormVehicleData({ mess_id: "", jenis: "MOBIL", nama: "", plat: "", pic: "", nik: "", kontak: "", pajak: "", pajak_tahunan: "", service: "", oli: "" }); setShowFormVehicle(true); };
-  const openEditVehicle = (vehicle: any, e: any) => { e.stopPropagation(); setEditingVehicleId(vehicle.id); setFormVehicleData({ mess_id: vehicle.mess_id || "", jenis: vehicle.jenis, nama: vehicle.nama_kendaraan, plat: vehicle.plat_nomor, pic: vehicle.pic_kendaraan, nik: vehicle.pic_nik, kontak: vehicle.pic_kontak, pajak: vehicle.tgl_pajak || "", pajak_tahunan: vehicle.tgl_pajak_tahunan || "", service: vehicle.tgl_service || "", oli: vehicle.tgl_ganti_oli || "" }); setShowFormVehicle(true); };
+const openEditVehicle = (v: any) => {setEditingVehicleId(v.id); setFormVehicleData({
+          mess_id: v.mess_id,
+          jenis: v.jenis,
+          nama: v.nama_kendaraan,
+          plat: v.plat_nomor,
+          pic: v.pic_kendaraan,
+          pajak: v.tgl_pajak,
+          service: v.tgl_service,
+          oli: v.tgl_ganti_oli,
+          pic_kontak: v.pic_kontak || "",
+          lokasi: v.lokasi || "TANJUNG UNCANG"}); setShowFormVehicle(true);};
   const openAddIT = () => { setEditingITId(null); setFormITData({ device: "", category: "LAPTOP", status: "TERSEDIA", holder: "", nik: "", dept: "" }); setShowFormIT(true); };
   const openEditIT = (item: any) => { setEditingITId(item.id); setFormITData({ device: item.device_name, category: item.category, status: item.status, holder: item.current_holder || "", nik: item.nik || "", dept: item.department || "" }); setShowFormIT(true); };
   const openEditStock = (item: any) => { setEditingStockId(item.id); setFormStockData({ item: item.item_name, size: item.size, total: item.total_stock,lokasi: item.lokasi || "TANJUNG UNCANG" }); setShowFormStock(true);};
