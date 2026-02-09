@@ -23,6 +23,7 @@ const MACHINE_CATEGORIES = [
 
 export default function AdminPage() {
   const router = useRouter();
+  const [inputListrik, setInputListrik] = useState("");
   const [activeTab, setActiveTab] = useState("input");
   const [loading, setLoading] = useState(false);
 
@@ -205,135 +206,121 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  // --- LOGIC 3: BOSS REPORT (SIMPLE VERSION) ---
-  const cariDataBoss = async () => {
-    if (!formBoss.id_cari) return alert("Masukkan ID!");
-    setLoading(true);
-    setMultipleResultsBoss([]);
-    setFormBoss({ ...formBoss, data_found: false });
-    const { data } = await supabase.from("orders").select("*").eq("order_id", formBoss.id_cari);
-    if (data && data.length > 0) {
-        if (data.length === 1) { loadDataToBossForm(data[0]); } else { setMultipleResultsBoss(data); }
-    } else { alert("❌ ID Tidak Ditemukan"); }
-    setLoading(false);
-  };
+  // --- LOGIC 3: BOSS REPORT (FINAL & STABLE) ---
+const cariDataBoss = async () => {
+  if (!formBoss.id_cari) return alert("Masukkan ID!");
+  setLoading(true);
+  setMultipleResultsBoss([]);
+  setFormBoss({ ...formBoss, data_found: false });
 
-  const loadDataToBossForm = (data: any) => {
-    setFormBoss((prev) => ({ 
-        ...prev, 
-        data_found: true, 
-        db_id: data.id, 
-        progress: parseInt(data.status) || 0, 
-        riwayat: data.internal_report || "", 
-        laporan: "",
-        progress_listrik: data.progress_listrik || 0,
-        pic_listrik: data.pic_listrik || "",
-        note_listrik: data.note_listrik || ""
-    }));
-    setMultipleResultsBoss([]);
-  };
+  const { data } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("order_id", formBoss.id_cari);
 
-  const handleLaporanBoss = async () => {
-    if (!formBoss.data_found) return alert("Pilih Mesin dulu!");
-    setLoading(true);
-    try {
-        let fotoUrl = null;
-        if (formBoss.foto) fotoUrl = await uploadToSupabase(formBoss.foto, formBoss.id_cari);
-        
-        const tanggal = new Date().toLocaleDateString("id-ID");
-        const jam = new Date().toLocaleTimeString("id-ID").slice(0, 5);
+  if (data && data.length > 0) {
+    if (data.length === 1) loadDataToBossForm(data[0]);
+    else setMultipleResultsBoss(data);
+  } else {
+    alert("❌ ID Tidak Ditemukan");
+  }
 
-        // LOGIKA UPDATE MEKANIK
-        let finalReportMekanik = formBoss.riwayat;
-        let deskripsiProgress = ""; 
-        if (formBoss.laporan) {
-            const logBaru = `[${tanggal} ${jam}] ${formBoss.laporan}`;
-            finalReportMekanik = formBoss.riwayat ? `${formBoss.riwayat}\n\n${logBaru}` : logBaru;
-            deskripsiProgress = formBoss.laporan;
-        }
+  setLoading(false);
+};
 
-        // LOGIKA UPDATE LISTRIK (APPEND)
-        let finalReportListrik = formBoss.note_listrik; // Ambil yang lama (sebenarnya note_listrik di db itu riwayatnya)
-        // Note: di database `note_listrik` kita gunakan sebagai history log listrik juga agar sama polanya
-        
-        // Tapi tunggu, di loadDataToBossForm, kita set `note_listrik` ke state `note_listrik`.
-        // Masalahnya state `note_listrik` di formBoss ini dipakai untuk inputan baru di text area.
-        // Jadi kita perlu variabel terpisah untuk "Input Baru" vs "Riwayat Lama".
-        // Karena struktur `initialFormBoss` kamu pakai `note_listrik` untuk inputan,
-        // Maka kita asumsikan yang ada di DB itu adalah HISTORY.
-        
-        // Agar aman dan simple sesuai request "tidak hilang", kita baca ulang data saat mau save atau kita simpan history di state terpisah.
-        // TAPI, agar tidak merubah banyak struktur state `initialFormBoss`, kita pakai trik:
-        // Saat load, kita simpan history di variable temporary atau anggap `note_listrik` di DB adalah History.
-        
-        // REVISI LOGIC:
-        // Di Admin Tab 3, kita punya `note_listrik` di state formBoss.
-        // Saat load, formBoss.note_listrik diisi data dari DB (History).
-        // TAPI ADMIN MAU NGETIK BARU. Kalau dia ketik di situ, history lama terhapus di UI input.
-        
-        // KARENA ITU, SAYA SUDAH MEMPERBAIKI DI KODE SEBELUMNYA DENGAN `laporan_listrik_baru`.
-        // TAPI KODE DI BAWAH INI SAYA BUAT LEBIH SIMPLE LAGI SESUAI REQUEST.
-        
-        // KITA PAKAI LOGIC:
-        // 1. Progress & PIC langsung replace.
-        // 2. Laporan Mesin (Log) -> Append ke internal_report.
-        // 3. Catatan Listrik -> Di kode Admin Tab 3 sebelumnya, textareanya untuk INPUT BARU.
-        //    Jadi `formBoss.note_listrik` di UI adalah INPUT BARU.
-        //    Data lama harusnya diambil dari DB.
-        
-        // OKE, SAYA GUNAKAN LOGIC YANG SAMA DENGAN UPDATE MESIN AGAR KONSISTEN.
-        // Saya akan ambil data lama dari `formBoss` (yang sudah diload saat pilih mesin), lalu append.
-        
-        // Tapi tunggu, di `loadDataToBossForm` tadi: `note_listrik: data.note_listrik || ""`
-        // Berarti saat admin buka, textarea `Catatan Listrik` SUDAH TERISI catatan lama.
-        // Kalau admin nambah tulisan di situ, berarti dia mengedit/menambah text itu.
-        // JADI: Apa yang ada di textarea `Catatan Listrik` itulah yang akan disimpan ke DB.
-        // Ini cara paling simple: "WYSIWYG" (What You See Is What You Get).
-        // Kalau admin mau nambah log, dia tinggal enter dan ketik di bawahnya. Data lama gak hilang kecuali dia hapus manual.
-        
-        // NAMUN, User minta "buatkan setiap laporan yang di beri admin itu tidak hilang sebelumnya".
-        // Cara paling aman adalah APPEND otomatis seperti Laporan Mesin.
-        
-        // JADI SAYA AKAN UBAH SEDIKIT DI `loadDataToBossForm` KHUSUS LISTRIK:
-        // `note_listrik` di state akan kosong untuk input baru.
-        // History listrik kita simpan di state bayangan (misal saya selipkan di properti lain atau ambil dari DB saat save).
-        
-        // UPDATE: Saya akan pakai variable temporary `riwayat_listrik_lama` di state (Saya tambahkan ke initialFormBoss).
+const loadDataToBossForm = (data: any) => {
+  setFormBoss((prev) => ({
+    ...prev,
+    data_found: true,
+    db_id: data.id,
+    progress: parseInt(data.status) || 0,
+    riwayat: data.internal_report || "",
+    laporan: "",
+    progress_listrik: data.progress_listrik || 0,
+    pic_listrik: data.pic_listrik || "",
+    note_listrik: data.note_listrik || "", // ⬅️ INI PURE HISTORY
+  }));
 
-        const payload: any = { 
-            status: `${formBoss.progress}%`, 
-            internal_report: finalReportMekanik,
-            progress_listrik: formBoss.progress_listrik,
-            pic_listrik: formBoss.pic_listrik,
-            // UPDATE LOG LISTRIK (Append)
-            // Logic: Ambil lama + Baru
-            note_listrik: formBoss.note_listrik // Ini input baru. Tunggu.. ini akan menimpa.
-        };
-        
-        // Perbaikan Logic Listrik agar APPEND (Menyambung):
-        // Saya butuh data lama. Untungnya di `formBoss` saya akan tambahkan properti `riwayat_listrik_lama`.
-        
-        let finalLogListrik = (formBoss as any).riwayat_listrik_lama || "";
-        if (formBoss.note_listrik) { // Jika ada input baru
-             const logListrikBaru = `[${tanggal} ${jam}] ${formBoss.note_listrik}`;
-             finalLogListrik = finalLogListrik ? `${finalLogListrik}\n\n${logListrikBaru}` : logListrikBaru;
-        }
-        payload.note_listrik = finalLogListrik;
+  // ⬇️ PENTING: input baru HARUS KOSONG
+  setInputListrik("");
 
-        if (deskripsiProgress) {
-            payload.deskripsi_progress = deskripsiProgress;
-        }
-        
-        if (fotoUrl) payload.foto_url = fotoUrl;
-        
-        await supabase.from("orders").update(payload).eq("id", formBoss.db_id);
-        alert("✅ Laporan Terkirim!");
-        setFormBoss(initialFormBoss);
-        if (refBossFile.current) refBossFile.current.value = "";
+  setMultipleResultsBoss([]);
+};
 
-    } catch (err: any) { alert("Gagal: " + err.message); }
-    setLoading(false);
-  };
+const handleLaporanBoss = async () => {
+  if (!formBoss.data_found) return alert("Pilih Mesin dulu!");
+  setLoading(true);
+
+  try {
+    let fotoUrl = null;
+    if (formBoss.foto) {
+      fotoUrl = await uploadToSupabase(formBoss.foto, formBoss.id_cari);
+    }
+
+    const tanggal = new Date().toLocaleDateString("id-ID");
+    const jam = new Date().toLocaleTimeString("id-ID").slice(0, 5);
+
+    // =======================
+    // LOGIKA MESIN (APPEND)
+    // =======================
+    let finalReportMekanik = formBoss.riwayat;
+    let deskripsiProgress = "";
+
+    if (formBoss.laporan.trim()) {
+      const logBaru = `[${tanggal} ${jam}] ${formBoss.laporan}`;
+      finalReportMekanik = finalReportMekanik
+        ? `${finalReportMekanik}\n\n${logBaru}`
+        : logBaru;
+
+      deskripsiProgress = formBoss.laporan;
+    }
+
+    // =======================
+    // LOGIKA LISTRIK (APPEND AMAN)
+    // =======================
+    let finalLogListrik = formBoss.note_listrik || "";
+
+    if (inputListrik.trim()) {
+      const logListrikBaru = `[${tanggal} ${jam}] ${inputListrik}`;
+      finalLogListrik = finalLogListrik
+        ? `${finalLogListrik}\n\n${logListrikBaru}`
+        : logListrikBaru;
+    }
+
+    // =======================
+    // PAYLOAD FINAL
+    // =======================
+    const payload: any = {
+      status: `${formBoss.progress}%`,
+      internal_report: finalReportMekanik,
+      note_listrik: finalLogListrik,
+      progress_listrik: formBoss.progress_listrik,
+      pic_listrik: formBoss.pic_listrik,
+    };
+
+    if (deskripsiProgress) {
+      payload.deskripsi_progress = deskripsiProgress;
+    }
+
+    if (fotoUrl) {
+      payload.foto_url = fotoUrl;
+    }
+
+    await supabase.from("orders").update(payload).eq("id", formBoss.db_id);
+
+    alert("✅ Laporan Terkirim!");
+
+    setFormBoss(initialFormBoss);
+    setInputListrik("");
+
+    if (refBossFile.current) refBossFile.current.value = "";
+  } catch (err: any) {
+    alert("Gagal: " + err.message);
+  }
+
+  setLoading(false);
+};
+
 
   // --- LOGIC 4: DATABASE LIST ---
   const fetchListData = async () => {
@@ -498,7 +485,10 @@ export default function AdminPage() {
                                   </div>
                                   <div>
                                       <label className="text-[10px] font-bold text-slate-500 uppercase">Catatan Listrik</label>
-                                      <textarea rows={2} className="w-full p-2 bg-white border border-yellow-200 rounded-lg text-slate-700 text-sm font-medium" placeholder="Isi laporan listrik..." value={formBoss.note_listrik} onChange={(e) => setFormBoss({...formBoss, note_listrik: e.target.value})} />
+                                      <textarea rows={2} className="w-full p-2 bg-white border border-yellow-200 rounded-lg text-slate-700 text-sm font-medium" placeholder="Isi laporan listrik..."
+  value={inputListrik}
+  onChange={(e) => setInputListrik(e.target.value)}
+/>
                                   </div>
                               </div>
                           </div>

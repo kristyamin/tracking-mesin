@@ -146,7 +146,7 @@ export default function DashboardBos() {
     // Syarat: Mekanik 100% DAN Listrik 100%
     let isStatusDone = false;
     if (term === 'selesai' || term === 'done' || term === 'finished') {
-        const mechProg = parseInt(item.status) || 0; // Mengambil dari status persen admin
+        const mechProg = parseInt(item.status) || 0; 
         const elecProg = item.progress_listrik || 0;
         if (mechProg >= 100 && elecProg >= 100) isStatusDone = true;
     }
@@ -177,6 +177,24 @@ export default function DashboardBos() {
       const dateB = new Date(itemsB[0].created_at).getTime();
       return dateB - dateA; 
   });
+
+  // --- HELPER UNTUK MEMECAH TEXT HISTORY (FIX TERTUTUP DI DESKTOP) ---
+  const renderLogHistory = (text: string | null) => {
+    if (!text) return null;
+    // Pecah berdasarkan baris baru (\n), filter baris kosong
+    const lines = text.split('\n').filter(line => line.trim() !== "");
+    
+    return (
+      <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+        {lines.map((line, idx) => (
+          <div key={idx} className="relative pl-4 border-l-2 border-slate-300">
+             <div className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-slate-300"></div>
+             <p className="text-sm font-bold text-slate-700 break-words leading-relaxed">{line}</p>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 relative">
@@ -445,11 +463,9 @@ export default function DashboardBos() {
                                             {activeOrder.status || "0%"}
                                         </span>
                                     </div>
-                                    {/* ISI LAPORAN MEKANIK (HISTORY LOG) */}
+                                    {/* ISI LAPORAN MEKANIK (HISTORY LOG FIXED) */}
                                     {activeOrder.internal_report ? (
-                                        <p className="text-slate-800 font-bold leading-relaxed text-sm whitespace-pre-wrap">
-                                            {activeOrder.internal_report}
-                                        </p>
+                                        renderLogHistory(activeOrder.internal_report)
                                     ) : (
                                         <div className="text-center py-4 text-slate-400 italic text-xs">{t.noReport}</div>
                                     )}
@@ -472,11 +488,9 @@ export default function DashboardBos() {
                                             {activeOrder.progress_listrik || 0}%
                                         </span>
                                     </div>
-                                    {/* ISI LAPORAN ELECTRICAL (HISTORY LOG) */}
+                                    {/* ISI LAPORAN ELECTRICAL (HISTORY LOG FIXED) */}
                                     {activeOrder.note_listrik ? (
-                                        <p className="text-slate-800 font-bold leading-relaxed text-sm whitespace-pre-wrap">
-                                            {activeOrder.note_listrik}
-                                        </p>
+                                        renderLogHistory(activeOrder.note_listrik)
                                     ) : (
                                         <div className="text-center py-4 text-slate-400 italic text-xs">{t.noReport}</div>
                                     )}
