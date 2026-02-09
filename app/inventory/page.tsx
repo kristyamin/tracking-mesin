@@ -82,7 +82,7 @@ export default function InventoryPage() {
   // MODAL STATE
   const [selectedMess, setSelectedMess] = useState<any>(null);
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
-  
+    
   // MODAL FORM STATE
   const [showFormMess, setShowFormMess] = useState(false); 
   const [showFormVehicle, setShowFormVehicle] = useState(false); 
@@ -1096,8 +1096,77 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                           <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold uppercase" placeholder="Nama Karyawan Peminjam" value={formLoanData.employee} onChange={e => setFormLoanData({...formLoanData, employee: e.target.value})} />
                           <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="NIK Karyawan" value={formLoanData.nik} onChange={e => setFormLoanData({...formLoanData, nik: e.target.value})} />
                           <div>
-                            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Pilih Barang dari Gudang</label>
-                            <CustomSelectStock options={uniformStockList.filter(s => s.lokasi === activeGALoc)} value={formLoanData.stock_id} onChange={(val: any) => setFormLoanData({...formLoanData, stock_id: val})} placeholder={`-- Barang Gudang ${activeGALoc} --`}  />
+<div 
+className="mb-4">
+    <label className="text-[10px] font-black uppercase text-slate-400 ml-1 mb-2 block">
+        PILIH BARANG DARI GUDANG {activeGALoc}
+    </label>
+
+    <div className="grid grid-cols-2 gap-3 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar pb-2">
+        {Object.entries(
+            ((uniformStockList || []) as any[]) // ✅ Hindari error undefined
+                .filter(s => s.lokasi === activeGALoc)
+                .reduce((acc, item) => {
+                    const name = item.item_name;
+                    if (!acc[name]) acc[name] = [];
+                    acc[name].push(item);
+                    return acc;
+                }, {} as Record<string, any[]>)
+        ).map(([itemName, items]) => {
+            
+            // ✅ Casting 'as any' untuk hilangkan garis merah di find & stock_id
+            const selectedItem = (items as any[]).find(i => i.id === (formLoanData as any).stock_id);
+            const isActive = !!selectedItem;
+
+            return (
+                <div 
+                    key={itemName} 
+                    className={`
+                        relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col
+                        ${isActive 
+                            ? 'bg-indigo-50 border-indigo-500 shadow-md ring-1 ring-indigo-500' 
+                            : 'bg-white border-slate-200 hover:border-indigo-200'
+                        }
+                    `}
+                >
+                    {/* Judul Barang */}
+                    <div className={`text-[11px] font-extrabold uppercase mb-2 truncate ${isActive ? 'text-indigo-700' : 'text-slate-600'}`}>
+                        {itemName}
+                    </div>
+
+                    {/* ✅ CUSTOM SCROLL LIST (Pengganti Select agar bisa 4 baris) */}
+                    <div className="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
+                        <div className="max-h-[100px] overflow-y-auto custom-scrollbar-sm text-[10px]">
+                            {(items as any[]).map((stok) => (
+                                <div
+                                    key={stok.id}
+                                    onClick={() => setFormLoanData({ ...formLoanData, stock_id: stok.id } as any)}
+                                    className={`
+                                        px-2 py-1.5 border-b border-slate-100 last:border-0 cursor-pointer transition-colors
+                                        ${(formLoanData as any).stock_id === stok.id 
+                                            ? 'bg-indigo-600 text-white font-bold' 
+                                            : 'hover:bg-indigo-100 text-slate-700'
+                                        }
+                                    `}
+                                >
+                                    Size {stok.size} <span className={((formLoanData as any).stock_id === stok.id) ? 'text-indigo-200' : 'text-slate-400'}>({stok.total_stock})</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Indikator Terpilih */}
+                    {isActive && (
+                        <div className="mt-2 text-[9px] font-bold text-indigo-600 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
+                            Terpilih: {selectedItem.size}
+                        </div>
+                    )}
+                </div>
+            );
+        })}
+    </div>
+</div>
                           </div>
                           <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="Catatan (Opsional)" value={formLoanData.notes} onChange={e => setFormLoanData({...formLoanData, notes: e.target.value})} />
                           <button onClick={handleLoanItem} className="w-full bg-orange-600 text-white py-3 rounded-xl font-black mt-2 hover:bg-orange-700 transition">CATAT PEMINJAMAN</button>
