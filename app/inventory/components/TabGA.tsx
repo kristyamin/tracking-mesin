@@ -1,6 +1,16 @@
 "use client";
 import { useState } from "react";
 
+const sizeRank: Record<string, number> = {
+  "XS": 1, "S": 2, "M": 3, "L": 4, "XL": 5, 
+  "2XL": 6, "XXL": 6, "3XL": 7, "XXXL": 7, "4XL": 8, "5XL": 9
+};
+
+const getSizeScore = (s: string) => {
+  const cleanSize = s?.toUpperCase().trim();
+  return sizeRank[cleanSize] || (parseInt(cleanSize) ? 100 + parseInt(cleanSize) : 999);
+};
+
 export default function TabGA({ 
   stocks, loans, vehicles, itAssets, employees, role, searchTerm, 
   onAddStock, onEditStock, onDelete, onLoan, onReturn, onPrint, onAddMore, onImport, 
@@ -256,30 +266,51 @@ export default function TabGA({
                     {role === 'mess_admin' && <button onClick={() => onAddStock(selectedLoc)} className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-[10px] font-bold transition">+ TAMBAH STOK</button>}
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b">
-                            <tr><th className="p-4">Nama Barang</th><th className="p-4 text-center">Ukuran</th><th className="p-4 text-center">Sisa Stok</th>{role === 'mess_admin' && <th className="p-4 text-center">Aksi</th>}</tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {filteredStocks.map((stock: any) => (
-                                <tr key={stock.id} className="hover:bg-slate-50 transition group">
-                                    <td className="p-4 font-bold text-slate-700 uppercase">{stock.item_name}</td>
-                                    <td className="p-4 text-center"><span className="bg-slate-100 px-2 py-1 rounded text-xs font-bold text-slate-500">{stock.size}</span></td>
-                                    <td className="p-4 text-center">
-                                        <span className={`text-lg font-black ${stock.total_stock < 5 ? 'text-red-500' : 'text-green-600'}`}>{stock.total_stock}</span>
-                                    </td>
-                                    {role === 'mess_admin' && (
-                                        <td className="p-4 text-center">
-                                            <div className="flex justify-center gap-2">
-                                                <button onClick={() => onEditStock(stock)} className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition">✏️</button>
-                                                <button onClick={() => onDelete('uniform_stocks', stock.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition">🗑️</button>
-                                            </div>
-                                        </td>
-                                    )}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+ {/* --- REVISI: GROUPING & SORTING STOK --- */}
+                <div className="p-4 space-y-8">
+                    {Object.entries(filteredStocks.reduce((acc: any, item: any) => {
+                        // 1. Grouping by Nama Barang
+                        const name = item.item_name;
+                        if (!acc[name]) acc[name] = [];
+                        acc[name].push(item);
+                        return acc;
+                    }, {})).map(([groupName, items]: any) => (
+                        <div key={groupName} className="border rounded-xl overflow-hidden shadow-sm">
+                            {/* Header Nama Barang */}
+                            <div className="bg-slate-100 p-3 border-b flex justify-between items-center">
+                                <h4 className="font-black text-slate-700 uppercase tracking-wider text-xs md:text-sm">📌 {groupName}</h4>
+                                <span className="text-[10px] font-bold bg-white px-2 py-1 rounded border text-slate-500">{items.length} Varian Size</span>
+                            </div>
+                            
+                            {/* Tabel Per Item */}
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-50 text-slate-400 uppercase text-[9px] font-bold border-b">
+                                    <tr><th className="p-3 w-1/3">Ukuran</th><th className="p-3 text-center">Sisa Stok</th>{role === 'mess_admin' && <th className="p-3 text-right">Aksi</th>}</tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50 bg-white">
+                                    {/* 2. Sorting by Ukuran (Kecil -> Besar) */}
+                                    {items.sort((a:any, b:any) => getSizeScore(a.size) - getSizeScore(b.size))
+                                          .map((stock: any) => (
+                                        <tr key={stock.id} className="hover:bg-orange-50 transition group">
+                                            <td className="p-3"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold border border-slate-200">{stock.size}</span></td>
+                                            <td className="p-3 text-center">
+                                                <span className={`text-sm font-black ${stock.total_stock < 5 ? 'text-red-500 animate-pulse' : 'text-green-600'}`}>{stock.total_stock}</span>
+                                            </td>
+                                            {role === 'mess_admin' && (
+                                                <td className="p-3 text-right">
+                                                    <div className="flex justify-end gap-1">
+                                                        <button onClick={() => onEditStock(stock)} className="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-1.5 rounded-lg transition text-xs font-bold">EDIT</button>
+                                                        <button onClick={() => onDelete('uniform_stocks', stock.id)} className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white p-1.5 rounded-lg transition text-xs font-bold">HAPUS</button>
+                                                    </div>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ))}
+                </div>
                 </div>
                 {filteredStocks.length === 0 && <div className="text-center p-8 italic text-slate-400">Stok kosong di lokasi ini.</div>}
             </div>

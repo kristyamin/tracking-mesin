@@ -51,7 +51,13 @@ const CustomSelectStock = ({ options, value, onChange, placeholder }: any) => {
       </div>
     );
 };
-
+// --- HELPER SIZE SORTING ---
+const sizeRank = { "XS": 1, "S": 2, "M": 3, "L": 4, "XL": 5, "2XL": 6, "XXL": 6, "3XL": 7, "XXXL": 7, "4XL": 8, "5XL": 9 };
+const getSizeScore = (s: string) => {
+  const clean = s?.toUpperCase().trim();
+  // @ts-ignore
+  return sizeRank[clean] || (parseInt(clean) ? 100 + parseInt(clean) : 999);
+};
 export default function InventoryPage() {
   const router = useRouter();
   const [role, setRole] = useState("");
@@ -115,7 +121,13 @@ export default function InventoryPage() {
   const [formStockData, setFormStockData] = useState({ item: "", size: "", total: "", lokasi: "" });
   const [formLoanData, setFormLoanData] = useState({ employee: "", nik: "", stock_id: "", qty: 1, notes: "" });
   const [formAPARData, setFormAPARData] = useState({ no: "", loc: "", type: "POWDER", kg: "", exp: "", cond: "BAIK", lokasi: ""});
-
+  const [acList, setAcList] = useState<any[]>([]); // <--- WADAH DATA AC
+  const [showFormAC, setShowFormAC] = useState(false);
+  const [editingACId, setEditingACId] = useState<number | null>(null);
+  // State Form AC
+  const [formACData, setFormACData] = useState({ 
+      brand: "", pk: "", tahun: "", lokasi: "TANJUNG UNCANG", detail: "", service: "", kondisi: "BAIK" 
+  });
   useEffect(() => {
     const userRole = sessionStorage.getItem("user_role");
     if (userRole !== "mess_admin" && userRole !== "mess_viewer") { router.push("/"); } 
@@ -132,6 +144,7 @@ export default function InventoryPage() {
     const { data: dataLoan } = await supabase.from("uniform_loans").select("*").order("created_at", { ascending: false }); if (dataLoan) setUniformLoanList(dataLoan);
     const { data: dataAPAR } = await supabase.from("apar_assets").select("*").order("lokasi"); if (dataAPAR) setAparList(dataAPAR);
     const { data: dataEmp } = await supabase.from("company_employees").select("*").order("nama"); if (dataEmp) setEmployeeList(dataEmp);
+    const { data: dataAC } = await supabase.from("ac_assets").select("*").order("lokasi"); if (dataAC) setAcList(dataAC);
     setLoading(false);
   };
 
@@ -444,6 +457,42 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
       alert("✅ Data APAR Saved!"); 
       setShowFormAPAR(false); 
       fetchData(); 
+  };
+  // --- HANDLER AC ---
+  const openAddAC = () => {
+      setEditingACId(null);
+      setFormACData({ brand: "", pk: "", tahun: "", lokasi: "TANJUNG UNCANG", detail: "", service: "", kondisi: "BAIK" });
+      setShowFormAC(true);
+  };
+
+  const openEditAC = (item: any) => {
+      setEditingACId(item.id);
+      setFormACData({ 
+          brand: item.brand, pk: item.pk || "", tahun: item.tahun_pasang || "", 
+          lokasi: item.lokasi, detail: item.detail_lokasi, 
+          service: item.tgl_service_berikutnya || "", kondisi: item.kondisi 
+      });
+      setShowFormAC(true);
+  };
+
+  const handleSaveAC = async () => {
+      if (!formACData.brand) return alert("Nama/Merk AC Wajib!");
+      const payload = {
+          brand: formACData.brand.toUpperCase(),
+          pk: formACData.pk,
+          tahun_pasang: formACData.tahun,
+          lokasi: formACData.lokasi,
+          detail_lokasi: formACData.detail ? formACData.detail.toUpperCase() : "-",
+          tgl_service_berikutnya: formACData.service || null,
+          kondisi: formACData.kondisi
+      };
+
+      if (editingACId) await supabase.from("ac_assets").update(payload).eq("id", editingACId);
+      else await supabase.from("ac_assets").insert(payload);
+      
+      alert("✅ Data AC Tersimpan!");
+      setShowFormAC(false);
+      fetchData();
   };
 
 // --- FUNGSI TAMBAH PENGHUNI (YANG HILANG) ---
@@ -770,10 +819,9 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                 {role === "mess_admin" && (
                   <>
                     <button onClick={openAddMess} className="bg-slate-800 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-black transition">+ MESS</button>
-                    <button onClick={openAddVehicle} className="bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-blue-700 transition">+ KENDARAAN</button>
                     <button onClick={() => setShowFormResident(true)} className="bg-green-600 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-green-700 transition">+ PENGHUNI</button>
+                    <button onClick={openAddVehicle} className="bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-blue-700 transition">+ KENDARAAN</button>
                     <button onClick={openAddIT} className="bg-purple-600 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-purple-700 transition">+ LAPTOP/IT</button>
-                    <button onClick={openAddAPAR} className="bg-red-600 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-red-700 transition">+ APAR</button>
                   </>
                 )}
                 <button onClick={() => router.push("/")} className="bg-white border border-slate-200 text-slate-500 px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-slate-100 transition">LOGOUT</button>
@@ -818,9 +866,10 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                 </button>
 
                 <button onClick={() => { setActiveTab("APAR"); setSearchTerm(""); }} 
-                    className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${activeTab === 'APAR' ? 'bg-slate-800 text-white shadow-lg ring-2 ring-slate-200' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
-                    <span className="text-sm md:text-base">🔥</span>
-                    <span>APAR</span>
+                    className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${activeTab === 'APAR' ?
+                    'bg-slate-800 text-white shadow-lg ring-2 ring-slate-200' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>
+                    <span className="text-sm md:text-base">✨</span> {/* Ganti Icon */}
+                    <span>LAINNYA</span> {/* Ganti Teks */}
                 </button>
 
             </div>
@@ -874,7 +923,23 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
         {activeTab === "MESS" && <TabMess messList={messList} residentList={residentList} role={role} onSelectMess={setSelectedMess} onEdit={openEditMess} onDelete={handleDelete} searchTerm={searchTerm} />}
         {activeTab === "VEHICLE" && <TabVehicle vehicleList={vehicleList} role={role} onSelectVehicle={setSelectedVehicle} onEdit={openEditVehicle} onDelete={handleDelete} onPrint={handlePrintVehicles} searchTerm={searchTerm} onAdd={openAddVehicle} />}
         {activeTab === "IT" && <TabIT data={itList} role={role} onAdd={openAddIT} onEdit={openEditIT} onDelete={handleDelete} onPrint={handlePrintIT} searchTerm={searchTerm} />}
-        {activeTab === "APAR" && <TabAPAR aparList={aparList} role={role} onAdd={openAddAPAR} onEdit={openEditAPAR} onDelete={handleDelete} searchTerm={searchTerm} onPrint={handlePrintAPAR} />}
+{activeTab === "APAR" && (
+            <TabAPAR 
+                aparList={aparList} 
+                acList={acList} // <--- Kirim Data AC
+                role={role} 
+                searchTerm={searchTerm}
+                // Props APAR
+                onAddAPAR={openAddAPAR} 
+                onEditAPAR={openEditAPAR} 
+                // Props AC
+                onAddAC={openAddAC}
+                onEditAC={openEditAC}
+                // Umum
+                onDelete={handleDelete} 
+                onPrint={handlePrintAPAR} // Bisa dipakai buat print umum nanti
+            />
+        )}
         {activeTab === "UNIFORM" && (
             <TabGA 
               stocks={uniformStockList} 
@@ -983,8 +1048,7 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
       )}
 
 {/* --- MODAL INPUT FORM (GABUNGAN SEMUA) --- */}
-      {(showFormMess || showFormVehicle || showFormResident || showFormIT || showFormStock || showFormLoan || showFormAPAR) && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm print:hidden">
+{(showFormMess || showFormVehicle || showFormResident || showFormIT || showFormStock || showFormLoan || showFormAPAR || showFormAC) && (          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm print:hidden">
               <div className="bg-white w-full max-w-lg p-6 md:p-8 rounded-[2rem] shadow-2xl animate-in slide-in-from-bottom-10 max-h-[90vh] overflow-y-auto custom-scrollbar">
                   <h3 className="text-lg md:text-xl font-black text-slate-800 mb-6 uppercase border-b pb-4">
                       {showFormMess && (editingMessId ? "Edit Data Mess" : "Tambah Mess Baru")}
@@ -992,8 +1056,9 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                       {showFormResident && "Tambah Penghuni Mess"}
                       {showFormIT && (editingITId ? "Edit Aset IT" : "Tambah Aset IT")}
                       {showFormStock && (editingStockId ? "Edit Stok Gudang" : "Tambah Stok Baru")}
-                      {showFormLoan && "Form Peminjaman GA"}
+                      {showFormLoan && "Form Pinjaman"}
                       {showFormAPAR && (editingAPARId ? "Edit Data APAR" : "Tambah APAR Baru")}
+                      {showFormAC && (editingACId ? "Edit Data AC" : "Tambah AC Baru")}
                   </h3>
                   
                   {/* --- FORM MESS (TETAP) --- */}
@@ -1064,10 +1129,10 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                     </div>
                   )}
                   
-                  {/* --- FORM STOCK / GA (TETAP DULU SESUAI REQUEST) --- */}
+    {/* --- FORM STOCK / GA (TETAP DULU SESUAI REQUEST) --- */}
                   {showFormStock && (<div className="space-y-4"><input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold uppercase" placeholder="Nama Barang (Ex: Kemeja Lapangan)" value={formStockData.item} onChange={e => setFormStockData({...formStockData, item: e.target.value})} /><div className="flex gap-2"><input className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold uppercase" placeholder="Size (L, XL, 42)" value={formStockData.size} onChange={e => setFormStockData({...formStockData, size: e.target.value})} /><input className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" type="number" placeholder="Total Stok" value={formStockData.total} onChange={e => setFormStockData({...formStockData, total: e.target.value})} /></div><button onClick={handleSaveStock} className="w-full bg-slate-800 text-white py-3 rounded-xl font-black mt-2 hover:bg-black transition">SIMPAN STOK</button></div>)}
                   
-                  {/* --- FORM APAR (ADA DROPDOWN LOKASI) --- */}
+    {/* --- FORM APAR (ADA DROPDOWN LOKASI) --- */}
                   {showFormAPAR && (
                     <div className="space-y-4">
                         {/* INPUT LOKASI BARU */}
@@ -1090,12 +1155,48 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                     </div>
                   )}
 
-                  {/* --- FORM LOAN (TETAP) --- */}
+    {/* --- FORM LOAN (TETAP) --- */}
                   {showFormLoan && (
                       <div className="space-y-4">
                           <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold uppercase" placeholder="Nama Karyawan Peminjam" value={formLoanData.employee} onChange={e => setFormLoanData({...formLoanData, employee: e.target.value})} />
                           <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="NIK Karyawan" value={formLoanData.nik} onChange={e => setFormLoanData({...formLoanData, nik: e.target.value})} />
                           <div>
+
+    {/* --- FORM AC (Letakkan di atas tombol BATAL) --- */}
+                  {showFormAC && (
+                    <div className="space-y-4">
+                        <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 mb-2">
+                            <label className="text-[10px] font-black uppercase text-blue-500 ml-1">Lokasi Unit AC</label>
+                            <select className="w-full p-2 bg-white rounded-lg border text-sm font-bold text-slate-700 mt-1" 
+                                value={formACData.lokasi} onChange={e => setFormACData({...formACData, lokasi: e.target.value})}>
+                                <option value="TANJUNG UNCANG">📍 TANJUNG UNCANG</option>
+                                <option value="SEKUPANG">📍 SEKUPANG</option>
+                                <option value="MEGA CIPTA">📍 MEGA CIPTA</option>
+                            </select>
+                        </div>
+                        <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold uppercase" placeholder="Merk AC (Ex: PANASONIC)" value={formACData.brand} onChange={e => setFormACData({...formACData, brand: e.target.value})} />
+                        <div className="flex gap-2">
+                             <input className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="PK (Ex: 1 PK)" value={formACData.pk} onChange={e => setFormACData({...formACData, pk: e.target.value})} />
+                             <input className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="Tahun Pasang" type="number" value={formACData.tahun} onChange={e => setFormACData({...formACData, tahun: e.target.value})} />
+                        </div>
+                        <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold uppercase" placeholder="Detail Posisi (Ex: R. Meeting)" value={formACData.detail} onChange={e => setFormACData({...formACData, detail: e.target.value})} />
+                        
+                        <div className="bg-orange-50 p-3 rounded-xl border border-orange-200">
+                             <label className="text-[10px] font-black uppercase text-orange-500 ml-1 block mb-1">Jadwal Cuci / Service</label>
+                             <input type="date" className="w-full p-2 bg-white rounded-lg font-bold text-slate-700" value={formACData.service} onChange={e => setFormACData({...formACData, service: e.target.value})} />
+                        </div>
+
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                             <label className="text-[10px] font-black uppercase text-slate-500 ml-1 block mb-1">Kondisi Unit</label>
+                             <select className="w-full p-2 bg-white rounded-lg font-bold text-slate-700" value={formACData.kondisi} onChange={e => setFormACData({...formACData, kondisi: e.target.value})}>
+                                <option value="BAIK">✅ BAIK / NORMAL</option>
+                                <option value="RUSAK">❌ RUSAK</option>
+                             </select>
+                        </div>
+
+                        <button onClick={handleSaveAC} className="w-full bg-blue-600 text-white py-3 rounded-xl font-black mt-2 hover:bg-blue-700 transition shadow-lg">SIMPAN DATA AC</button>
+                    </div>
+                  )}
 <div 
 className="mb-4">
     <label className="text-[10px] font-black uppercase text-slate-400 ml-1 mb-2 block">
@@ -1137,7 +1238,7 @@ className="mb-4">
                     {/* ✅ CUSTOM SCROLL LIST (Pengganti Select agar bisa 4 baris) */}
                     <div className="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
                         <div className="max-h-[100px] overflow-y-auto custom-scrollbar-sm text-[10px]">
-                            {(items as any[]).map((stok) => (
+                            {(items as any[]).sort((a, b) => getSizeScore(a.size) - getSizeScore(b.size)).map((stok) => (
                                 <div
                                     key={stok.id}
                                     onClick={() => setFormLoanData({ ...formLoanData, stock_id: stok.id } as any)}
@@ -1173,7 +1274,7 @@ className="mb-4">
                       </div>
                   )}
 
-                  <button onClick={() => {setShowFormMess(false); setShowFormVehicle(false); setShowFormResident(false); setShowFormIT(false); setShowFormStock(false); setShowFormLoan(false); setShowFormAPAR(false); setShowImportModal(false);}} className="w-full text-slate-400 font-bold text-xs mt-4 hover:text-slate-600 py-2">BATAL</button>
+                  <button onClick={() => {setShowFormMess(false); setShowFormVehicle(false); setShowFormResident(false); setShowFormIT(false); setShowFormStock(false); setShowFormLoan(false); setShowFormAPAR(false); setShowImportModal(false); setShowFormAC(false);}} className="w-full text-slate-400 font-bold text-xs mt-4 hover:text-slate-600 py-2">BATAL</button>
               </div>
           </div>
       )}
