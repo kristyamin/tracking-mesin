@@ -1154,15 +1154,7 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                         <div className="flex gap-2"><select className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" value={formAPARData.type} onChange={e => setFormAPARData({...formAPARData, type: e.target.value})}><option value="POWDER">POWDER</option><option value="CO2">CO2</option><option value="FOAM">FOAM</option></select><input className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" type="number" placeholder="Berat (KG)" value={formAPARData.kg} onChange={e => setFormAPARData({...formAPARData, kg: e.target.value})} /></div><div className="flex gap-2 items-center"><div className="w-1/2 bg-slate-50 p-2 rounded-xl border border-slate-200"><label className="text-[9px] font-bold text-slate-400 block mb-1">Expired Date</label><input type="date" className="w-full bg-transparent text-sm font-bold" value={formAPARData.exp} onChange={e => setFormAPARData({...formAPARData, exp: e.target.value})} /></div><select className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" value={formAPARData.cond} onChange={e => setFormAPARData({...formAPARData, cond: e.target.value})}><option value="BAIK">✓ BAIK</option><option value="KURANG TEKANAN">⚠ KURANG TEKANAN</option><option value="RUSAK">❌ RUSAK</option></select></div><button onClick={handleSaveAPAR} className="w-full bg-red-600 text-white py-3 rounded-xl font-black mt-2 hover:bg-red-700 transition">SIMPAN DATA APAR</button>
                     </div>
                   )}
-
-    {/* --- FORM LOAN (TETAP) --- */}
-                  {showFormLoan && (
-                      <div className="space-y-4">
-                          <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold uppercase" placeholder="Nama Karyawan Peminjam" value={formLoanData.employee} onChange={e => setFormLoanData({...formLoanData, employee: e.target.value})} />
-                          <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="NIK Karyawan" value={formLoanData.nik} onChange={e => setFormLoanData({...formLoanData, nik: e.target.value})} />
-                          <div>
-
-    {/* --- FORM AC (Letakkan di atas tombol BATAL) --- */}
+{/* --- FORM AC (Tempel DI ATAS tombol BATAL) --- */}
                   {showFormAC && (
                     <div className="space-y-4">
                         <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 mb-2">
@@ -1197,6 +1189,13 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                         <button onClick={handleSaveAC} className="w-full bg-blue-600 text-white py-3 rounded-xl font-black mt-2 hover:bg-blue-700 transition shadow-lg">SIMPAN DATA AC</button>
                     </div>
                   )}
+
+    {/* --- FORM LOAN (TETAP) --- */}
+                  {showFormLoan && (
+                      <div className="space-y-4">
+                          <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold uppercase" placeholder="Nama Karyawan Peminjam" value={formLoanData.employee} onChange={e => setFormLoanData({...formLoanData, employee: e.target.value})} />
+                          <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="NIK Karyawan" value={formLoanData.nik} onChange={e => setFormLoanData({...formLoanData, nik: e.target.value})} />
+                          <div>
 <div 
 className="mb-4">
     <label className="text-[10px] font-black uppercase text-slate-400 ml-1 mb-2 block">
