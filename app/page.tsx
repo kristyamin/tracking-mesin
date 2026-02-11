@@ -190,8 +190,7 @@ export default function Home() {
             
             {/* JUDUL (Shimmer Animation) */}
             <div className="text-center mb-10">
-                <h1 className="text-3xl font-black text-slate-800 uppercase tracking-tight mb-2">
-                    TRACKING <span className="animate-text-shimmer font-black">MACHINE</span>
+                <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tight mb-2 whitespace-nowrap">                    TRACKING <span className="animate-text-shimmer font-black">MACHINE</span>
                 </h1>
                 <div className="h-1 w-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mx-auto mb-3"></div>
                 <p className="text-slate-400 text-[10px] font-bold tracking-[0.3em] uppercase">MONITORING PROGRESS SYSTEM</p>
