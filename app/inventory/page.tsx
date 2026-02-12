@@ -10,7 +10,7 @@ import TabGA from "./components/TabGA";
 import TabMess from "./components/TabMess";
 import TabVehicle from "./components/TabVehicle";
 import TabAPAR from "./components/TabAPAR";
-import TabSearch from "./components/TabSearch"; // KOMPONEN BARU
+import TabSearch from "./components/TabSearch"; 
 
 // --- CUSTOM SELECT COMPONENT (MESS) ---
 const CustomSelectMess = ({ options, value, onChange, placeholder }: any) => {
@@ -58,9 +58,51 @@ const clean = s?.toUpperCase().trim();
   // @ts-ignore
   return sizeRank[clean] || (parseInt(clean) ? 100 + parseInt(clean) : 999);
 };
+const TRANSLATIONS = {
+  ID: {
+    title: "HRD CENTER",
+    subtitle: "PT DJITOE MESINDO - ASSET & FACILITY",
+    logout: "KELUAR",
+    backToMachine: "🏭 MONITORING MESIN",
+    backToMachineMobile: "MESIN",
+    print: "📄 CETAK PENGHUNI",
+    search: "Cari Data...",
+    tabSearch: "PENELUSURAN",
+    tabMess: "MESS",
+    tabVehicle: "KENDARAAN",
+    tabIT: "IT ASET",
+    tabGA: "SERAGAM",
+    tabAPAR: "LAINNYA",
+    addMess: "+ MESS",
+    addRes: "+ PENGHUNI",
+    addVeh: "+ KENDARAAN",
+    addIT: "+ LAPTOP/IT",
+  },
+  EN: {
+    title: "HRD CENTER",
+    subtitle: "PT DJITOE MESINDO - ASSET & FACILITY",
+    logout: "LOGOUT",
+    backToMachine: "🏭 MACHINE MONITOR",
+    backToMachineMobile: "MACHINE",
+    print: "📄 PRINT RESIDENTS",
+    search: "Search Data...",
+    tabSearch: "SEARCH",
+    tabMess: "MESS",
+    tabVehicle: "VEHICLES",
+    tabIT: "IT ASSETS",
+    tabGA: "UNIFORMS",
+    tabAPAR: "OTHERS",
+    addMess: "+ MESS",
+    addRes: "+ RESIDENT",
+    addVeh: "+ VEHICLE",
+    addIT: "+ LAPTOP/IT",
+  }
+};
 export default function InventoryPage() {
 const router = useRouter();
 const [role, setRole] = useState("");
+const [lang, setLang] = useState<"ID" | "EN">("ID"); 
+const t = TRANSLATIONS[lang]; 
   // DEFAULT TAB: MESS (Supaya login langsung lihat data)
 const [activeTab, setActiveTab] = useState<"MESS" | "VEHICLE" | "IT" | "UNIFORM" | "APAR" | "SEARCH">("MESS");
 const [loading, setLoading] = useState(true);
@@ -131,8 +173,13 @@ const [showFormAPAR, setShowFormAPAR] = useState(false);
   });
   useEffect(() => {
     const userRole = sessionStorage.getItem("user_role");
-    if (userRole !== "mess_admin" && userRole !== "mess_viewer") { router.push("/"); } 
-    else { setRole(userRole); fetchData(); }
+    // 👇Boss sudah boleh masuk!
+    if (userRole !== "mess_admin" && userRole !== "mess_viewer" && userRole !== "boss") { 
+        router.push("/"); 
+    } else { 
+        setRole(userRole); 
+        fetchData(); 
+    }
   }, []);
 
   const fetchData = async () => {
@@ -919,6 +966,12 @@ const handleAddResident = async () => {
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 print:mb-4">
             <div><h1 className="text-2xl md:text-3xl font-black text-slate-800 uppercase tracking-tighter text-center md:text-left">HRD CENTER</h1><p className="text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-widest mt-1 text-center md:text-left">PT DJITOE MESINDO - ASSET & FACILITY</p></div>
             <div className="flex flex-wrap gap-2 justify-center print:hidden">
+                {role === "boss" && (
+                    <div className="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200">
+                       <button onClick={() => setLang("ID")} className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-all ${lang === 'ID' ? 'bg-white shadow text-slate-900' : 'text-slate-400'}`}>ID</button>
+                       <button onClick={() => setLang("EN")} className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-all ${lang === 'EN' ? 'bg-white shadow text-slate-900' : 'text-slate-400'}`}>EN</button>
+                    </div>
+                )}
                 <button onClick={handleRefresh} className="bg-slate-100 border border-slate-300 text-slate-600 px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-slate-200 transition flex items-center gap-1 shadow-sm">🔄</button>
                 {role === "mess_admin" && (
                   <>
@@ -937,6 +990,16 @@ const handleAddResident = async () => {
                     <button onClick={openAddVehicle} className="bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-blue-700 transition">+ KENDARAAN</button>
                     <button onClick={openAddIT} className="bg-purple-600 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-purple-700 transition">+ LAPTOP/IT</button>
                   </>
+                )}
+                {/* KHUSUS BOSS: TOMBOL BALIK KE MESIN */}
+                {role === "boss" && (
+                    <button 
+                        onClick={() => router.push("/dashboard-bos")} 
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-indigo-700 transition flex items-center gap-2 shadow-md animate-in slide-in-from-right"
+                    >
+                        🏭 <span className="hidden md:inline">MONITORING MESIN</span>
+                        <span className="md:hidden">MESIN</span>
+                    </button>
                 )}
                 <button onClick={() => router.push("/")} className="bg-white border border-slate-200 text-slate-500 px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-slate-100 transition">LOGOUT</button>
             </div>
@@ -991,8 +1054,8 @@ const handleAddResident = async () => {
             {/* BAGIAN KANAN: INPUT SEARCH & TOMBOL CETAK */}
             <div className="flex flex-col md:flex-row gap-2 items-center w-full md:w-auto justify-end mt-4 md:mt-0">
                 
-                {/* TOMBOL CETAK (HANYA MUNCUL DI TAB MESS) */}
-                {activeTab === "MESS" && (
+            {/* TOMBOL CETAK (HANYA MUNCUL DI TAB MESS & HANYA UNTUK ADMIN) */}
+                {activeTab === "MESS" && role === "mess_admin" && (
                     <button 
                         onClick={handlePrintResidents} 
                         className="bg-emerald-600 text-white px-4 py-3 rounded-xl text-xs font-bold hover:bg-emerald-700 transition flex items-center gap-2 shadow-lg animate-in fade-in"

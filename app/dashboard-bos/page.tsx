@@ -207,12 +207,28 @@ export default function DashboardBos() {
               <h1 className="text-xl md:text-2xl font-black uppercase tracking-tight">{t.title}</h1>
               <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">{t.subtitle}</p>
             </div>
+            
+            {/* 👇 INI BAGIAN TOMBOL KANAN ATAS (SUDAH ADA TOMBOL INVENTORY) */}
             <div className="flex flex-wrap gap-2 justify-center">
+               
+               {/* 1. Tombol Bahasa */}
                <div className="bg-slate-100 p-1 rounded-full flex items-center border border-slate-200">
                    <button onClick={() => setLang("ID")} className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'ID' ? 'bg-white shadow text-slate-900' : 'text-slate-400'}`}>ID 🇮🇩</button>
                    <button onClick={() => setLang("EN")} className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'EN' ? 'bg-white shadow text-slate-900' : 'text-slate-400'}`}>EN 🇬🇧</button>
                </div>
+
+               {/* 2. Tombol Inventory (Ungu) - SIAP PAKAI 📦 */}
+               <button 
+                  onClick={() => router.push("/inventory")} 
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-full font-bold text-xs uppercase hover:bg-indigo-700 transition-colors shadow-md flex items-center gap-1"
+               >
+                  <span>📦</span> {lang === 'ID' ? 'Inventaris' : 'Inventaris'}
+               </button>
+
+               {/* 3. Tombol Refresh */}
                <button onClick={handleRefresh} className="bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-bold text-xs uppercase hover:bg-blue-100 transition-colors">{t.refresh}</button>
+               
+               {/* 4. Tombol Back/Home */}
                {selectedType ? (
                    <button onClick={() => setSelectedType(null)} className="bg-slate-100 text-slate-600 px-4 py-2 rounded-full font-bold text-xs uppercase hover:bg-slate-200 transition-colors">{t.back}</button>
                ) : (
@@ -220,6 +236,8 @@ export default function DashboardBos() {
                )}
             </div>
           </div>
+
+          {/* Bagian Search Bar & Tahun (Tetap Sama) */}
           <div className="flex flex-col md:flex-row justify-end items-center gap-3">
             <div className="relative w-full md:w-64">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
