@@ -15,6 +15,9 @@ export default function TabAPAR({
   const [viewStep, setViewStep] = useState<"LOCATION" | "LIST">("LOCATION");
   const [selectedLoc, setSelectedLoc] = useState("");
 
+  // STATE FILTER AREA (TAMBAHAN BARU)
+  const [filterArea, setFilterArea] = useState("ALL");
+
   // --- HELPER ---
   const formatDateIndo = (dateString: string) => { 
       if (!dateString) return "-";
@@ -39,9 +42,15 @@ export default function TabAPAR({
       return <span className="text-green-600 font-bold">🟢 {formatDateIndo(dateString)}</span>;
   };
 
-  // --- FILTER DATA ---
+  // --- FILTER DATA (SUDAH DITAMBAH LOGIC FILTER AREA) ---
   const filteredAPAR = (aparList || []).filter((item: any) => {
       let pass = item.lokasi === selectedLoc;
+      
+      // Filter Area (WS 1, WS 2...)
+      if (filterArea !== "ALL") {
+          pass = pass && item.detail_lokasi?.toUpperCase().includes(filterArea);
+      }
+
       if (searchTerm) {
           const term = searchTerm.toLowerCase();
           pass = pass && (item.nomor_tabung?.toLowerCase().includes(term) || item.detail_lokasi?.toLowerCase().includes(term));
@@ -51,6 +60,12 @@ export default function TabAPAR({
 
   const filteredAC = (acList || []).filter((item: any) => {
       let pass = item.lokasi === selectedLoc;
+      
+      // Filter Area
+      if (filterArea !== "ALL") {
+          pass = pass && item.detail_lokasi?.toUpperCase().includes(filterArea);
+      }
+
       if (searchTerm) {
           const term = searchTerm.toLowerCase();
           pass = pass && (item.brand?.toLowerCase().includes(term) || item.detail_lokasi?.toLowerCase().includes(term));
@@ -101,8 +116,12 @@ export default function TabAPAR({
             <div className="flex items-center gap-4 mb-6">
                 <button 
                     onClick={() => {
-                        if (viewStep === "LIST") setViewStep("LOCATION");
-                        else setModule("MENU");
+                        if (viewStep === "LIST") {
+                            setViewStep("LOCATION");
+                            setFilterArea("ALL"); // Reset filter saat kembali
+                        } else {
+                            setModule("MENU");
+                        }
                     }} 
                     className="w-10 h-10 bg-white rounded-full shadow-sm border border-slate-200 flex items-center justify-center hover:bg-slate-100 transition text-slate-600 font-black text-xl"
                 >
@@ -146,11 +165,33 @@ export default function TabAPAR({
             {/* STEP 2: LIST DATA */}
             {viewStep === "LIST" && (
                 <div className="space-y-4">
+                    
+                    {/*  FITUR FILTER */}
+                    <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar no-scrollbar">
+                        {["ALL", "WS 1", "WS 2", "WS 3", "WS 4"].map((area) => (
+                            <button 
+                                key={area}
+                                onClick={() => setFilterArea(area)}
+                                className={`
+                                    px-4 py-2 rounded-xl text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition shadow-sm border
+                                    ${filterArea === area 
+                                        ? (module === "APAR" ? "bg-red-600 text-white border-red-600 shadow-red-200" : "bg-blue-600 text-white border-blue-600 shadow-blue-200") 
+                                        : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}
+                                `}
+                            >
+                                {area === "ALL" ? "SEMUA AREA" : area}
+                            </button>
+                        ))}
+                    </div>
+
                     {/* HEADER LIST */}
                     <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4">
                         <div>
                             <h3 className="font-black text-slate-800 uppercase">{module} - {selectedLoc}</h3>
-                            <p className="text-xs text-slate-400 font-bold">{module === 'APAR' ? filteredAPAR.length : filteredAC.length} Unit</p>
+                            <p className="text-xs text-slate-400 font-bold">
+                                {module === 'APAR' ? filteredAPAR.length : filteredAC.length} Unit
+                                {filterArea !== "ALL" && <span className="text-slate-800"> (Area: {filterArea})</span>}
+                            </p>
                         </div>
                         {role === 'mess_admin' && <button onClick={() => onPrint(selectedLoc)} className="bg-slate-100 text-slate-600 p-2 rounded-lg text-xs font-bold hover:bg-slate-200">🖨️ CETAK</button>}
                     </div>
@@ -161,9 +202,9 @@ export default function TabAPAR({
                         {module === 'APAR' && filteredAPAR.map((item: any) => (
                             <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:border-red-400 transition group relative">
                                 {role === 'mess_admin' && (
-                                    <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                                        <button onClick={() => onEditAPAR(item)} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white">✏️</button>
-                                        <button onClick={() => onDelete('apar_assets', item.id)} className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white">🗑️</button>
+                                    <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition z-10">
+                                        <button onClick={(e) => { e.stopPropagation(); onEditAPAR(item); }} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white">✏️</button>
+                                        <button onClick={(e) => { e.stopPropagation(); onDelete('apar_assets', item.id); }} className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white">🗑️</button>
                                     </div>
                                 )}
                                 <div className="flex items-center gap-3 mb-2">
@@ -186,13 +227,13 @@ export default function TabAPAR({
                             </div>
                         ))}
 
-                        {/* --- LOOPING DATA AC (STYLE KARTU JUGA!) --- */}
+                        {/* --- LOOPING DATA AC --- */}
                         {module === 'AC' && filteredAC.map((item: any) => (
                             <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:border-blue-400 transition group relative">
                                 {role === 'mess_admin' && (
-                                    <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                                        <button onClick={() => onEditAC(item)} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white">✏️</button>
-                                        <button onClick={() => onDelete('ac_assets', item.id)} className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white">🗑️</button>
+                                    <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition z-10">
+                                        <button onClick={(e) => { e.stopPropagation(); onEditAC(item); }} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white">✏️</button>
+                                        <button onClick={(e) => { e.stopPropagation(); onDelete('ac_assets', item.id); }} className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white">🗑️</button>
                                     </div>
                                 )}
                                 <div className="flex items-center gap-3 mb-2">
@@ -221,7 +262,9 @@ export default function TabAPAR({
 
                         {/* PESAN KOSONG */}
                         {(module === 'APAR' ? filteredAPAR : filteredAC).length === 0 && (
-                            <div className="col-span-full text-center py-10 text-slate-400 italic">Belum ada data {module} di {selectedLoc}.</div>
+                            <div className="col-span-full text-center py-10 text-slate-400 italic">
+                                {filterArea !== "ALL" ? `Tidak ada unit di area ${filterArea}` : `Belum ada data ${module} di ${selectedLoc}.`}
+                            </div>
                         )}
                     </div>
                 </div>
