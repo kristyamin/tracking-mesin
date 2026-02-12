@@ -14,8 +14,8 @@ import TabSearch from "./components/TabSearch"; // KOMPONEN BARU
 
 // --- CUSTOM SELECT COMPONENT (MESS) ---
 const CustomSelectMess = ({ options, value, onChange, placeholder }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+const [isOpen, setIsOpen] = useState(false);
+const wrapperRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     function handleClickOutside(event: any) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setIsOpen(false);
@@ -34,8 +34,8 @@ const CustomSelectMess = ({ options, value, onChange, placeholder }: any) => {
 
 // --- CUSTOM SELECT COMPONENT (STOCK - SCROLLABLE) ---
 const CustomSelectStock = ({ options, value, onChange, placeholder }: any) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const wrapperRef = useRef<HTMLDivElement>(null);
+const [isOpen, setIsOpen] = useState(false);
+const wrapperRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
       function handleClickOutside(event: any) {
         if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setIsOpen(false);
@@ -43,7 +43,7 @@ const CustomSelectStock = ({ options, value, onChange, placeholder }: any) => {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [wrapperRef]);
-    const selectedItem = options.find((opt: any) => String(opt.id) === String(value));
+const selectedItem = options.find((opt: any) => String(opt.id) === String(value));
     return (
       <div className="relative w-full" ref={wrapperRef}>
         <button onClick={() => setIsOpen(!isOpen)} className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-left flex justify-between items-center focus:outline-none focus:border-blue-500 transition hover:bg-slate-100"><span className={`text-sm font-bold truncate ${selectedItem ? "text-slate-800" : "text-slate-400"}`}>{selectedItem ? `${selectedItem.item_name} (${selectedItem.size})` : placeholder}</span><span className="text-xs text-slate-400">▼</span></button>
@@ -54,49 +54,49 @@ const CustomSelectStock = ({ options, value, onChange, placeholder }: any) => {
 // --- HELPER SIZE SORTING ---
 const sizeRank = { "XS": 1, "S": 2, "M": 3, "L": 4, "XL": 5, "2XL": 6, "XXL": 6, "3XL": 7, "XXXL": 7, "4XL": 8, "5XL": 9 };
 const getSizeScore = (s: string) => {
-  const clean = s?.toUpperCase().trim();
+const clean = s?.toUpperCase().trim();
   // @ts-ignore
   return sizeRank[clean] || (parseInt(clean) ? 100 + parseInt(clean) : 999);
 };
 export default function InventoryPage() {
-  const router = useRouter();
-  const [role, setRole] = useState("");
+const router = useRouter();
+const [role, setRole] = useState("");
   // DEFAULT TAB: MESS (Supaya login langsung lihat data)
-  const [activeTab, setActiveTab] = useState<"MESS" | "VEHICLE" | "IT" | "UNIFORM" | "APAR" | "SEARCH">("MESS");
-  const [loading, setLoading] = useState(true);
+const [activeTab, setActiveTab] = useState<"MESS" | "VEHICLE" | "IT" | "UNIFORM" | "APAR" | "SEARCH">("MESS");
+const [loading, setLoading] = useState(true);
   
   // PRINT STATE
-  const [isReportMode, setIsReportMode] = useState(false);
-  const [reportType, setReportType] = useState<"RESIDENT" | "VEHICLE" | "IT" | "UNIFORM" | "APAR">("RESIDENT");
-  const [vehicleReportCategory, setVehicleReportCategory] = useState("");
-  const [printLocationFilter, setPrintLocationFilter] = useState(""); // Wadah untuk lokasi print
+const [isReportMode, setIsReportMode] = useState(false);
+const [reportType, setReportType] = useState<"RESIDENT" | "VEHICLE" | "IT" | "UNIFORM" | "APAR">("RESIDENT");
+const [vehicleReportCategory, setVehicleReportCategory] = useState("");
+const [printLocationFilter, setPrintLocationFilter] = useState(""); // Wadah untuk lokasi print
 
   // DATA STATE
-  const [messList, setMessList] = useState<any[]>([]);
-  const [vehicleList, setVehicleList] = useState<any[]>([]);
-  const [residentList, setResidentList] = useState<any[]>([]);
-  const [itList, setItList] = useState<any[]>([]);
-  const [uniformStockList, setUniformStockList] = useState<any[]>([]);
-  const [uniformLoanList, setUniformLoanList] = useState<any[]>([]);
-  const [aparList, setAparList] = useState<any[]>([]);
-  const [employeeList, setEmployeeList] = useState<any[]>([]); // Data Master
+const [messList, setMessList] = useState<any[]>([]);
+const [vehicleList, setVehicleList] = useState<any[]>([]);
+const [residentList, setResidentList] = useState<any[]>([]);
+const [itList, setItList] = useState<any[]>([]);
+const [uniformStockList, setUniformStockList] = useState<any[]>([]);
+const [uniformLoanList, setUniformLoanList] = useState<any[]>([]);
+const [aparList, setAparList] = useState<any[]>([]);
+const [employeeList, setEmployeeList] = useState<any[]>([]); // Data Master
 
   // VIEW STATE
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeGALoc, setActiveGALoc] = useState("TANJUNG UNCANG");
+const [searchTerm, setSearchTerm] = useState("");
+const [activeGALoc, setActiveGALoc] = useState("TANJUNG UNCANG");
 
   // MODAL STATE
-  const [selectedMess, setSelectedMess] = useState<any>(null);
-  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+const [selectedMess, setSelectedMess] = useState<any>(null);
+const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
     
   // MODAL FORM STATE
-  const [showFormMess, setShowFormMess] = useState(false); 
-  const [showFormVehicle, setShowFormVehicle] = useState(false); 
-  const [showFormResident, setShowFormResident] = useState(false);
-  const [showFormIT, setShowFormIT] = useState(false);
-  const [showFormStock, setShowFormStock] = useState(false);
-  const [showFormLoan, setShowFormLoan] = useState(false);
-  const [showFormAPAR, setShowFormAPAR] = useState(false);
+const [showFormMess, setShowFormMess] = useState(false); 
+const [showFormVehicle, setShowFormVehicle] = useState(false); 
+const [showFormResident, setShowFormResident] = useState(false);
+const [showFormIT, setShowFormIT] = useState(false);
+const [showFormStock, setShowFormStock] = useState(false);
+const [showFormLoan, setShowFormLoan] = useState(false);
+const [showFormAPAR, setShowFormAPAR] = useState(false);
   
   // IMPORT & RETURN STATE
   const [showImportModal, setShowImportModal] = useState(false);
@@ -112,9 +112,10 @@ export default function InventoryPage() {
   const [editingITId, setEditingITId] = useState<number | null>(null);
   const [editingStockId, setEditingStockId] = useState<number | null>(null);
   const [editingAPARId, setEditingAPARId] = useState<number | null>(null);
+  const [editingResidentId, setEditingResidentId] = useState<number | null>(null);
 
   // INPUT STATES
-  const [formMessData, setFormMessData] = useState({ nama: "", pic: "", alamat: "", kamar: "", ac: "" });
+  const [formMessData, setFormMessData] = useState({ nama: "", pic: "", hp: "", alamat: "", kamar: "", ac: "" });
   const [formVehicleData, setFormVehicleData] = useState({ mess_id: "", jenis: "MOBIL", nama: "", plat: "", pic: "", nik: "", kontak: "", pic_kontak: "", pajak: "", pajak_tahunan: "", service: "", oli: "", lokasi: "" });
   const [formResidentData, setFormResidentData] = useState({ mess_id: "", nama: "", nik: "", hp: "", kamar: "", jabatan: "" });
   const [formITData, setFormITData] = useState({ device: "", category: "LAPTOP", status: "TERSEDIA", holder: "", nik: "", dept: "", lokasi: "" });
@@ -283,8 +284,27 @@ const handlePrintGA = (loc: any) => {
   };
 
   // OPENERS
-  const openAddMess = () => { setEditingMessId(null); setFormMessData({ nama: "", pic: "", alamat: "", kamar: "", ac: "" }); setShowFormMess(true); };
-  const openEditMess = (mess: any, e: any) => { e.stopPropagation(); setEditingMessId(mess.id); setFormMessData({ nama: mess.nama_mess, pic: mess.pic_utama, alamat: mess.alamat, kamar: mess.jumlah_kamar, ac: mess.tgl_cuci_ac || "" }); setShowFormMess(true); };
+
+const openAddMess = () => { 
+    setEditingMessId(null);
+    setFormMessData({ nama: "", pic: "", hp: "", alamat: "", kamar: "", ac: "" }); // Reset HP
+    setShowFormMess(true); 
+};
+
+const openEditMess = (mess: any, e: any) => { 
+    if(e) e.stopPropagation(); // Biar aman
+    setEditingMessId(mess.id);
+    // Masukkan data HP dari database
+    setFormMessData({ 
+        nama: mess.nama_mess, 
+        pic: mess.pic_utama, 
+        hp: mess.pic_hp || "", // Ambil data HP
+        alamat: mess.alamat, 
+        kamar: mess.jumlah_kamar, 
+        ac: mess.tgl_cuci_ac || "" 
+    }); 
+    setShowFormMess(true); 
+};
   const openAddVehicle = () => { setEditingVehicleId(null); setFormVehicleData({ 
           mess_id: "", 
           jenis: "MOBIL", 
@@ -387,8 +407,25 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
       }); 
       setShowFormAPAR(true); 
   };
-  const handleSaveMess = async () => { if (!formMessData.nama) return alert("Nama Mess Wajib!"); 
-  const payload = { nama_mess: formMessData.nama, pic_utama: formMessData.pic, alamat: formMessData.alamat, jumlah_kamar: parseInt(formMessData.kamar) || 0, tgl_cuci_ac: formMessData.ac || null }; if (editingMessId) await supabase.from("mess_locations").update(payload).eq("id", editingMessId); else await supabase.from("mess_locations").insert(payload); setShowFormMess(false); fetchData(); };
+// HandleSaveMess:
+const handleSaveMess = async () => { 
+    if (!formMessData.nama) return alert("Nama Mess Wajib!");
+    
+    const payload = { 
+        nama_mess: formMessData.nama, 
+        pic_utama: formMessData.pic, 
+        pic_hp: formMessData.hp, // <--- KIRIM DATA HP
+        alamat: formMessData.alamat, 
+        jumlah_kamar: parseInt(formMessData.kamar) || 0, 
+        tgl_cuci_ac: formMessData.ac || null 
+    };
+
+    if (editingMessId) await supabase.from("mess_locations").update(payload).eq("id", editingMessId); 
+    else await supabase.from("mess_locations").insert(payload); 
+    
+    setShowFormMess(false); 
+    fetchData(); 
+};
   const handleSaveVehicle = async () => { 
       if (!formVehicleData.plat || !formVehicleData.nama) return alert("Nama & Plat Wajib!"); 
       const payload = { 
@@ -495,34 +532,71 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
       fetchData();
   };
 
+  
 // --- FUNGSI TAMBAH PENGHUNI (YANG HILANG) ---
-  const handleAddResident = async () => {
-    // 1. Validasi
+  // --- FUNGSI TAMBAH PENGHUNI (YANG HILANG) ---
+
+// 1. TAMBAHKAN INI DULU (Fungsi Buka Edit)
+const openEditResident = (res: any) => {
+    setEditingResidentId(res.id);
+    setFormResidentData({
+        mess_id: res.mess_id,
+        nama: res.nama_karyawan,
+        kamar: res.kamar_no,
+        nik: res.nik || "",
+        jabatan: res.jabatan || "",
+        hp: res.no_hp || ""
+    });
+    setShowFormResident(true);
+};
+
+// 2. GANTI KODE 'handleAddResident' DI GAMBARMU DENGAN YANG INI:
+const handleAddResident = async () => {
+    // A. Validasi
     if (!formResidentData.mess_id || !formResidentData.nama) {
       return alert("Harap pilih Mess dan isi Nama Karyawan!");
     }
 
-    // 2. Simpan ke Supabase
-    const { error } = await supabase.from("mess_residents").insert({
+    // B. Siapkan Data
+    const payload = {
         mess_id: parseInt(formResidentData.mess_id),
         nama_karyawan: formResidentData.nama.toUpperCase(),
         kamar_no: formResidentData.kamar,
         nik: formResidentData.nik,
         jabatan: formResidentData.jabatan,
         no_hp: formResidentData.hp
-    });
+    };
 
+    // C. Cek: Edit atau Baru?
+    let error;
+    if (editingResidentId) {
+        // Update data lama
+        const { error: err } = await supabase
+            .from("mess_residents")
+            .update(payload)
+            .eq("id", editingResidentId);
+        error = err;
+    } else {
+        // Insert data baru
+        const { error: err } = await supabase
+            .from("mess_residents")
+            .insert(payload);
+        error = err;
+    }
+
+    // D. Cek Error
     if (error) {
-        console.error("Error add resident:", error);
+        console.error("Error save resident:", error);
         return alert("Gagal menyimpan data penghuni.");
     }
 
-    // 3. Reset & Refresh
-    alert("✅ Penghuni berhasil ditambahkan!");
+    // E. Reset & Refresh
+    alert(editingResidentId ? "✅ Data penghuni diperbarui!" : "✅ Penghuni berhasil ditambahkan!");
     setShowFormResident(false);
-    setFormResidentData({ mess_id: "", nama: "", kamar: "", nik: "", jabatan: "", hp: "" }); // Reset form biar bersih
+    setEditingResidentId(null); // Reset ID edit
+    setFormResidentData({ mess_id: "", nama: "", kamar: "", nik: "", jabatan: "", hp: "" });
     fetchData(); 
-  };
+};
 
 // --- FUNGSI PENGEMBALIAN BARANG (Pasang di atas handleLoanItem) ---
   const handleReturnItem = async () => {
@@ -661,10 +735,36 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
 
       return (
           <div className="bg-white text-black p-8 font-serif min-h-screen">
-            {/* HEADER TOMBOL */}
+           
+           {/* HEADER TOMBOL (UPDATE: TOMBOL SAVE & CETAK DIPISAH) */}
             <div className="flex justify-between items-center mb-8 print:hidden border-b pb-4">
                 <p className="font-bold text-slate-500 uppercase tracking-widest">Preview Cetak</p>
-                <button onClick={() => setIsReportMode(false)} className="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700 transition shadow-sm">✕ TUTUP</button>
+                <div className="flex gap-2">
+                    {/* 1. TOMBOL SAVE PDF */}
+                    <button 
+                        onClick={() => {
+                            // Info kecil biar user tau harus pilih Save as PDF
+                            alert("👉 Pada jendela berikutnya, ubah 'Destination' atau 'Printer' menjadi 'Save as PDF' untuk menyimpan file.");
+                            window.print();
+                        }} 
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition shadow-sm flex items-center gap-2"
+                    >
+                        💾 SIMPAN PDF
+                    </button>
+
+                    {/* 2. TOMBOL CETAK LANGSUNG */}
+                    <button 
+                        onClick={() => window.print()} 
+                        className="bg-slate-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-800 transition shadow-sm flex items-center gap-2"
+                    >
+                        🖨️ CETAK
+                    </button>
+                    
+                    {/* 3. TOMBOL TUTUP */}
+                    <button onClick={() => setIsReportMode(false)} className="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700 transition shadow-sm">
+                        ✕ TUTUP
+                    </button>
+                </div>
             </div>
 
             {/* KOP SURAT */}
@@ -700,24 +800,28 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                                 <span className="text-xs font-mono uppercase bg-slate-100 px-2 rounded">{mess.alamat}</span>
                             </div>
                             
-                            {/* Tabel Penghuni */}
+                           {/* Tabel Penghuni (UPDATE: POSISI NO HP DIGESER) */}
                             <table className="w-full text-left text-sm border-collapse border border-black">
                                 <thead className="bg-gray-200">
                                     <tr>
                                         <th className="border border-black p-2 w-16 text-center">Kamar</th>
                                         <th className="border border-black p-2">Nama Penghuni</th>
+                                        {/* 👇 NO HP PINDAH KESINI (SEBELAH NAMA) */}
+                                        <th className="border border-black p-2 w-32 text-center">No. HP</th>
                                         <th className="border border-black p-2 w-32 text-center">NIK</th>
                                         <th className="border border-black p-2">Jabatan</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {residentList.filter(r => r.mess_id === mess.id).length === 0 ? (
-                                        <tr><td colSpan={4} className="border border-black p-2 text-center italic text-xs text-slate-400">Kamar Kosong</td></tr>
+                                    {residentList.filter((r:any) => r.mess_id === mess.id).length === 0 ? (
+                                        <tr><td colSpan={5} className="border border-black p-2 text-center italic text-xs text-slate-400">Kamar Kosong</td></tr>
                                     ) : (
-                                        residentList.filter(r => r.mess_id === mess.id).map(r => (
+                                        residentList.filter((r:any) => r.mess_id === mess.id).map((r:any) => (
                                             <tr key={r.id}>
                                                 <td className="border border-black p-2 text-center font-bold">{r.kamar_no}</td>
                                                 <td className="border border-black p-2 uppercase font-bold text-xs">{r.nama_karyawan}</td>
+                                                {/* 👇 DATA HP JUGA PINDAH KESINI */}
+                                                <td className="border border-black p-2 text-center font-mono text-xs">{r.no_hp || "-"}</td>
                                                 <td className="border border-black p-2 text-center font-mono text-xs">{r.nik || "-"}</td>
                                                 <td className="border border-black p-2 text-xs">{r.jabatan}</td>
                                             </tr>
@@ -819,7 +923,17 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                 {role === "mess_admin" && (
                   <>
                     <button onClick={openAddMess} className="bg-slate-800 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-black transition">+ MESS</button>
-                    <button onClick={() => setShowFormResident(true)} className="bg-green-600 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-green-700 transition">+ PENGHUNI</button>
+<button 
+    onClick={() => {
+        setEditingResidentId(null); // Pastikan mode edit mati
+        setFormResidentData({ mess_id: "", nama: "", kamar: "", nik: "", jabatan: "", hp: "" }); // Kosongkan form
+        setShowFormResident(true);
+    }} 
+    className="bg-green-600 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-green-700 transition"
+>
+    + PENGHUNI
+</button>
+
                     <button onClick={openAddVehicle} className="bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-blue-700 transition">+ KENDARAAN</button>
                     <button onClick={openAddIT} className="bg-purple-600 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-purple-700 transition">+ LAPTOP/IT</button>
                   </>
@@ -991,19 +1105,133 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
           </div>
       )}
 
-      {/* --- MODAL DETAIL MESS & VEHICLE (VERSI ASLI LAMA) --- */}
+      {/* --- MODAL DETAIL MESS (REVISI: PIC DI ATAS + TOMBOL EDIT MUNCUL) --- */}
       {selectedMess && (
           <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-in zoom-in-95 print:hidden">
               <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col">
-                  <div className="bg-slate-800 p-4 md:p-6 flex justify-between items-center text-white shrink-0"><div><h2 className="text-lg md:text-2xl font-black uppercase tracking-tight">{selectedMess.nama_mess}</h2><p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase">{selectedMess.alamat}</p></div><button onClick={() => setSelectedMess(null)} className="w-8 h-8 md:w-10 md:h-10 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center transition">✕</button></div>
-                  <div className="p-4 md:p-6 overflow-y-auto bg-slate-50 flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                      <div className="space-y-4">
-                          <h3 className="font-black text-slate-800 text-sm uppercase border-b pb-2 flex justify-between"><span>👥 Daftar Penghuni</span><span className="bg-blue-100 text-blue-600 px-2 rounded text-xs">{residentList.filter(r => r.mess_id === selectedMess.id).length} / {selectedMess.jumlah_kamar} Kamar</span></h3>
-                          <div className="space-y-3">{residentList.filter(r => r.mess_id === selectedMess.id).map((res) => (<div key={res.id} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center group hover:border-blue-400 transition"><div className="flex items-center gap-3"><div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-black text-xs shrink-0 border border-blue-100">{res.kamar_no || "?"}</div><div><p className="font-black text-slate-800 text-xs md:text-sm uppercase">{res.nama_karyawan}</p><div className="flex flex-wrap gap-x-3 gap-y-1 mt-1"><span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">💼 {res.jabatan || "Staff"}</span><span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">📞 {res.no_hp || "-"}</span></div><p className="text-[9px] text-slate-400 font-mono mt-1">NIK: {res.nik || "-"}</p></div></div>{role === 'mess_admin' && (<button onClick={() => handleDelete('mess_residents', res.id)} className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition opacity-100 md:opacity-0 md:group-hover:opacity-100">🗑️</button>)}</div>))}{residentList.filter(r => r.mess_id === selectedMess.id).length === 0 && <div className="text-center py-6 text-slate-400 text-xs italic bg-white rounded-xl border border-dashed">Mess Kosong</div>}</div>
+                  
+                  {/* HEADER MODAL */}
+                  <div className="bg-slate-800 p-4 md:p-6 flex justify-between items-center text-white shrink-0">
+                      <div>
+                          <h2 className="text-lg md:text-2xl font-black uppercase tracking-tight">{selectedMess.nama_mess}</h2>
+                          <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase">{selectedMess.alamat}</p>
                       </div>
-                      <div className="space-y-4">
-                          <h3 className="font-black text-slate-800 text-sm uppercase border-b pb-2 flex justify-between"><span>🚗 Aset Kendaraan</span><span className="bg-green-100 text-green-600 px-2 rounded text-xs">{vehicleList.filter(v => v.mess_id === selectedMess.id).length} Unit</span></h3>
-                          <div className="space-y-3">{vehicleList.filter(v => v.mess_id === selectedMess.id).map((v) => (<div key={v.id} onClick={() => setSelectedVehicle(v)} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2 cursor-pointer hover:border-blue-400"><div className="flex justify-between items-start"><div className="flex items-center gap-3"><div className="text-xl">{v.jenis === 'MOBIL' ? '🚙' : '🏍️'}</div><div><p className="font-black text-slate-800 text-xs uppercase">{v.nama_kendaraan} <span className="bg-slate-800 text-white px-1 rounded text-[9px]">{v.plat_nomor}</span></p></div></div></div><div className="flex gap-2 flex-wrap">{getStatusIndicator(v.tgl_service, "Svc")}{getStatusIndicator(v.tgl_pajak, "5Th")}</div></div>))}{vehicleList.filter(v => v.mess_id === selectedMess.id).length === 0 && <div className="text-center py-6 text-slate-400 text-xs italic bg-white rounded-xl border border-dashed">Tidak ada kendaraan.</div>}</div>
+                      <div className="flex gap-2">
+                          {/* 👇 TOMBOL EDIT SAYA MUNCULKAN DISINI */}
+                          {role === 'mess_admin' && (
+                              <button onClick={(e) => { setSelectedMess(null); openEditMess(selectedMess, e); }} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                                  ✏️ EDIT
+                              </button>
+                          )}
+                          <button onClick={() => setSelectedMess(null)} className="w-8 h-8 md:w-10 md:h-10 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center transition">✕</button>
+                      </div>
+                  </div>
+
+                  {/* BODY MODAL */}
+                  <div className="p-4 md:p-6 overflow-y-auto bg-slate-50 flex-1 flex flex-col gap-6">
+                      
+                      {/* 👇 INFO PIC & HP SAYA TARUH PALING ATAS (HEADER INFO) */}
+                      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                          <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-2xl">👤</div>
+                              <div>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase">Penanggung Jawab (PIC)</p>
+                                  <h3 className="text-lg font-black text-slate-800 uppercase">{selectedMess.pic_utama || "BELUM ADA PIC"}</h3>
+                              </div>
+                          </div>
+                          <div className="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-xl border border-green-100">
+                              <span className="text-green-600 text-xl">📞</span>
+                              <div>
+                                  <p className="text-[9px] font-bold text-green-600 uppercase">Kontak Darurat / HP</p>
+                                  <p className="font-bold text-slate-800 text-sm">{selectedMess.pic_hp || "-"}</p>
+                              </div>
+                          </div>
+                      </div>
+
+                      {/* GRID KONTEN (PENGHUNI & KENDARAAN) */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                          
+                          {/* KOLOM KIRI: PENGHUNI */}
+                          <div className="space-y-4">
+                              <h3 className="font-black text-slate-800 text-sm uppercase border-b pb-2 flex justify-between">
+                                  <span>👥 Daftar Penghuni</span>
+                                  <span className="bg-blue-100 text-blue-600 px-2 rounded text-xs">{residentList.filter((r:any) => r.mess_id === selectedMess.id).length} / {selectedMess.jumlah_kamar} Kamar</span>
+                              </h3>
+                              <div className="space-y-3">
+                                  {residentList.filter((r:any) => r.mess_id === selectedMess.id).map((res:any) => (
+    <div key={res.id} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center group hover:border-blue-400 transition">
+        
+        {/* Bagian Kiri: Info Penghuni */}
+        <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-black text-xs shrink-0 border border-blue-100">
+                {res.kamar_no || "?"}
+            </div>
+            <div>
+                <p className="font-black text-slate-800 text-xs md:text-sm uppercase">{res.nama_karyawan}</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                        💼 {res.jabatan || "Staff"}
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                        📞 {res.no_hp || "-"}
+                    </span>
+                </div>
+                <p className="text-[9px] text-slate-400 font-mono mt-1">NIK: {res.nik || "-"}</p>
+            </div>
+        </div>
+
+        {/* Bagian Kanan: Tombol Edit & Hapus */}
+        {role === 'mess_admin' && (
+            <div className="flex gap-1">
+                <button 
+                    onClick={() => openEditResident(res)} 
+                    className="w-8 h-8 flex items-center justify-center bg-blue-50 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition shadow-sm"
+                    title="Edit"
+                >
+                    ✏️
+                </button>
+                <button 
+                    onClick={() => handleDelete('mess_residents', res.id)} 
+                    className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition shadow-sm"
+                    title="Hapus"
+                >
+                    🗑️
+                </button>
+            </div>
+        )}
+    </div>
+))}
+                                  {residentList.filter((r:any) => r.mess_id === selectedMess.id).length === 0 && <div className="text-center py-6 text-slate-400 text-xs italic bg-white rounded-xl border border-dashed">Mess Kosong</div>}
+                              </div>
+                          </div>
+
+                          {/* KOLOM KANAN: KENDARAAN */}
+                          <div className="space-y-4">
+                              <h3 className="font-black text-slate-800 text-sm uppercase border-b pb-2 flex justify-between">
+                                  <span>🚗 Aset Kendaraan</span>
+                                  <span className="bg-green-100 text-green-600 px-2 rounded text-xs">{vehicleList.filter((v:any) => v.mess_id === selectedMess.id).length} Unit</span>
+                              </h3>
+                              <div className="space-y-3">
+                                  {vehicleList.filter((v:any) => v.mess_id === selectedMess.id).map((v:any) => (
+                                      <div key={v.id} onClick={() => setSelectedVehicle(v)} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2 cursor-pointer hover:border-blue-400">
+                                          <div className="flex justify-between items-start">
+                                              <div className="flex items-center gap-3">
+                                                  <div className="text-xl">{v.jenis === 'MOBIL' ? '🚙' : '🏍️'}</div>
+                                                  <div>
+                                                      <p className="font-black text-slate-800 text-xs uppercase">{v.nama_kendaraan} <span className="bg-slate-800 text-white px-1 rounded text-[9px]">{v.plat_nomor}</span></p>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                          <div className="flex gap-2 flex-wrap">
+                                              {getStatusIndicator(v.tgl_service, "Svc")}
+                                              {getStatusIndicator(v.tgl_pajak, "5Th")}
+                                          </div>
+                                      </div>
+                                  ))}
+                                  {vehicleList.filter((v:any) => v.mess_id === selectedMess.id).length === 0 && <div className="text-center py-6 text-slate-400 text-xs italic bg-white rounded-xl border border-dashed">Tidak ada kendaraan.</div>}
+                              </div>
+                          </div>
+
                       </div>
                   </div>
               </div>
@@ -1060,9 +1288,31 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                       {showFormAPAR && (editingAPARId ? "Edit Data APAR" : "Tambah APAR Baru")}
                       {showFormAC && (editingACId ? "Edit Data AC" : "Tambah AC Baru")}
                   </h3>
-                  
-                  {/* --- FORM MESS (TETAP) --- */}
-                  {showFormMess && (<div className="space-y-4"><input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="Nama Mess" value={formMessData.nama} onChange={e => setFormMessData({...formMessData, nama: e.target.value})} /><div className="flex gap-2"><input className="w-2/3 p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="PIC Utama" value={formMessData.pic} onChange={e => setFormMessData({...formMessData, pic: e.target.value})} /><input className="w-1/3 p-3 bg-slate-50 rounded-xl border text-sm font-bold" type="number" placeholder="Jml Kamar" value={formMessData.kamar} onChange={e => setFormMessData({...formMessData, kamar: e.target.value})} /></div><input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="Alamat Lengkap" value={formMessData.alamat} onChange={e => setFormMessData({...formMessData, alamat: e.target.value})} /><div className="bg-teal-50 p-3 rounded-xl border border-teal-100"><label className="text-[10px] font-black text-teal-600 uppercase ml-1 mb-1 block">Jadwal Cuci AC Berikutnya</label><input type="date" className="w-full p-2 bg-white rounded-lg border text-sm font-bold text-slate-700" value={formMessData.ac} onChange={e => setFormMessData({...formMessData, ac: e.target.value})} /></div><button onClick={handleSaveMess} className="w-full bg-slate-800 text-white py-4 rounded-xl font-black mt-4 hover:bg-black transition shadow-lg">{editingMessId ? "SIMPAN PERUBAHAN" : "SIMPAN DATA MESS"}</button></div>)}
+    {/* --- FORM MESS (UPDATE: ADA NO HP) --- */}
+                  {showFormMess && (
+                    <div className="space-y-4">
+                        <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="Nama Mess" value={formMessData.nama} onChange={e => setFormMessData({...formMessData, nama: e.target.value})} />
+                        
+                        {/* Baris PIC & HP */}
+                        <div className="flex gap-2">
+                             <input className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="Nama PIC Utama" value={formMessData.pic} onChange={e => setFormMessData({...formMessData, pic: e.target.value})} />
+                             <input className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="No. HP PIC" value={formMessData.hp} onChange={e => setFormMessData({...formMessData, hp: e.target.value})} />
+                        </div>
+
+                        <div className="flex gap-2">
+                             <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" type="number" placeholder="Jumlah Kamar" value={formMessData.kamar} onChange={e => setFormMessData({...formMessData, kamar: e.target.value})} />
+                        </div>
+
+                        <input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="Alamat Lengkap" value={formMessData.alamat} onChange={e => setFormMessData({...formMessData, alamat: e.target.value})} />
+                        
+                        <div className="bg-teal-50 p-3 rounded-xl border border-teal-100">
+                             <label className="text-[10px] font-black text-teal-600 uppercase ml-1 mb-1 block">Jadwal Cuci AC Berikutnya</label>
+                             <input type="date" className="w-full p-2 bg-white rounded-lg border text-sm font-bold text-slate-700" value={formMessData.ac} onChange={e => setFormMessData({...formMessData, ac: e.target.value})} />
+                        </div>
+
+                        <button onClick={handleSaveMess} className="w-full bg-slate-800 text-white py-4 rounded-xl font-black mt-4 hover:bg-black transition shadow-lg">{editingMessId ? "SIMPAN PERUBAHAN" : "SIMPAN DATA MESS"}</button>
+                    </div>
+                  )}
                   
                   {/* --- FORM KENDARAAN (ADA DROPDOWN LOKASI) --- */}
                   {showFormVehicle && (
@@ -1102,8 +1352,68 @@ const openAddAPAR = () => { setEditingAPARId(null); setFormAPARData({
                   )}
 
                   {/* --- FORM PENGHUNI (TETAP) --- */}
-                  {showFormResident && (<div className="space-y-4"><div><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Pilih Mess</label><CustomSelectMess options={messList} value={formResidentData.mess_id} onChange={(val: any) => setFormResidentData({...formResidentData, mess_id: val})} placeholder="-- Pilih Lokasi Mess --" /></div><div className="flex gap-2"><input className="w-2/3 p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="Nama Karyawan" onChange={e => setFormResidentData({...formResidentData, nama: e.target.value})} /><input className="w-1/3 p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="Kamar No." onChange={e => setFormResidentData({...formResidentData, kamar: e.target.value})} /></div><div className="flex gap-2"><input className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="NIK" onChange={e => setFormResidentData({...formResidentData, nik: e.target.value})} /><input className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="Jabatan" onChange={e => setFormResidentData({...formResidentData, jabatan: e.target.value})} /></div><input className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" placeholder="No HP / WA" onChange={e => setFormResidentData({...formResidentData, hp: e.target.value})} /><button onClick={handleAddResident} className="w-full bg-green-600 text-white py-3 rounded-xl font-black mt-4 hover:bg-green-700 transition">SIMPAN PENGHUNI</button></div>)}
-                  
+{showFormResident && (
+    <div className="space-y-4">
+        {/* Pilih Mess */}
+        <div>
+            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Pilih Mess</label>
+            <CustomSelectMess 
+                options={messList} 
+                value={formResidentData.mess_id} 
+                onChange={(val: any) => setFormResidentData({...formResidentData, mess_id: val})} 
+                placeholder="-- Pilih Lokasi Mess --" 
+            />
+        </div>
+
+        {/* Nama & Kamar */}
+        <div className="flex gap-2">
+            <input 
+                className="w-2/3 p-3 bg-slate-50 rounded-xl border text-sm font-bold" 
+                placeholder="Nama Karyawan" 
+                value={formResidentData.nama}  // <--- INI YANG BIKIN MUNCUL
+                onChange={e => setFormResidentData({...formResidentData, nama: e.target.value})} 
+            />
+            <input 
+                className="w-1/3 p-3 bg-slate-50 rounded-xl border text-sm font-bold" 
+                placeholder="Kamar No." 
+                value={formResidentData.kamar} // <--- INI JUGA
+                onChange={e => setFormResidentData({...formResidentData, kamar: e.target.value})} 
+            />
+        </div>
+
+        {/* NIK & Jabatan */}
+        <div className="flex gap-2">
+            <input 
+                className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" 
+                placeholder="NIK" 
+                value={formResidentData.nik} // <--- DITAMBAHKAN
+                onChange={e => setFormResidentData({...formResidentData, nik: e.target.value})} 
+            />
+            <input 
+                className="w-1/2 p-3 bg-slate-50 rounded-xl border text-sm font-bold" 
+                placeholder="Jabatan" 
+                value={formResidentData.jabatan} // <--- DITAMBAHKAN
+                onChange={e => setFormResidentData({...formResidentData, jabatan: e.target.value})} 
+            />
+        </div>
+
+        {/* No HP */}
+        <input 
+            className="w-full p-3 bg-slate-50 rounded-xl border text-sm font-bold" 
+            placeholder="No HP / WA" 
+            value={formResidentData.hp} // <--- DITAMBAHKAN
+            onChange={e => setFormResidentData({...formResidentData, hp: e.target.value})} 
+        />
+
+        {/* Tombol Simpan */}
+        <button 
+            onClick={handleAddResident} 
+            className="w-full bg-green-600 text-white py-3 rounded-xl font-black mt-4 hover:bg-green-700 transition"
+        >
+            {editingResidentId ? "SIMPAN PERUBAHAN" : "SIMPAN PENGHUNI BARU"}
+        </button>
+    </div>
+)}                  
                   {/* --- FORM IT (ADA DROPDOWN LOKASI) --- */}
                   {showFormIT && (
                     <div className="space-y-4">

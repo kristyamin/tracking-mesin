@@ -32,7 +32,18 @@ export default function TabMess({ messList, residentList, role, onSelectMess, on
                         <div className="absolute bottom-3 right-4 z-20 flex flex-col items-end">{mess.tgl_cuci_ac ? (<div className="scale-90 origin-right">{getStatusIndicator(mess.tgl_cuci_ac, "AC")}</div>) : (<span className="bg-slate-800/50 text-white px-2 py-0.5 rounded text-[9px] font-bold backdrop-blur-sm">AC Belum Ada Jadwal</span>)}</div>
                         {role === 'mess_admin' && (<div className="absolute top-3 right-3 z-30 flex gap-2"><button onClick={(e) => onEdit(mess, e)} className="w-8 h-8 bg-white/20 backdrop-blur-sm hover:bg-blue-600 hover:text-white rounded-full flex items-center justify-center transition shadow-lg text-white">✏️</button><button onClick={(e) => { e.stopPropagation(); onDelete('mess_locations', mess.id); }} className="w-8 h-8 bg-white/20 backdrop-blur-sm hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition shadow-lg text-white">🗑️</button></div>)}
                     </div>
-                    <div className="p-5 flex-1 flex flex-col justify-between"><div className="flex justify-between items-center mb-4"><span className="bg-slate-100 text-slate-500 text-[10px] font-black px-2 py-1 rounded-lg uppercase">PIC: {mess.pic_utama}</span><div className={`text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1 ${totalOrang >= totalKamar ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}><span>🛏️</span><span>{totalOrang} / {totalKamar} Isi</span></div></div></div>
+<div className="p-5 flex-1 flex flex-col justify-between">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="flex flex-col">
+                                <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2 py-1 rounded-lg uppercase w-fit">
+                                    👤 PIC: {mess.pic_utama}
+                                </span>
+                                {/* 👇 INI TAMBAHAN NO HP DI BAWAH PIC */}
+                                <span className="text-[10px] font-bold text-slate-400 mt-1 ml-1 flex items-center gap-1">
+                                    📞 {mess.pic_hp || "-"}
+                                </span>
+                            </div>
+                    <div className={`text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1 ${totalOrang >= totalKamar ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}><span>🛏️</span><span>{totalOrang} / {totalKamar} Isi</span></div></div></div>
                 </div>
             );
         })}
