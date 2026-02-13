@@ -179,22 +179,56 @@ export default function DashboardBos() {
   });
 
   // --- HELPER UNTUK MEMECAH TEXT HISTORY (FIX TERTUTUP DI DESKTOP) ---
-  const renderLogHistory = (text: string | null) => {
-    if (!text) return null;
-    // Pecah berdasarkan baris baru (\n), filter baris kosong
-    const lines = text.split('\n').filter(line => line.trim() !== "");
-    
-    return (
-      <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-        {lines.map((line, idx) => (
-          <div key={idx} className="relative pl-4 border-l-2 border-slate-300">
-             <div className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-slate-300"></div>
-             <p className="text-sm font-bold text-slate-700 break-words leading-relaxed">{line}</p>
+const renderLogHistory = (text: string | null) => {
+  if (!text) return null;
+  
+  // Pecah berdasarkan baris baru (\n), filter baris kosong
+  const lines = text.split('\n').filter(line => line.trim() !== "");
+  
+  // Variabel bantuan untuk menyimpan memori tanggal terakhir yang diproses
+  let lastDate = ""; 
+
+  return (
+    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+      {lines.map((line, idx) => {
+        // Ambil tanggal dari format string (misal dari "[9/2/2026 13.44]" jadi "9/2/2026")
+        const dateMatch = line.match(/^\[(.*?)\s/);
+        const currentDate = dateMatch ? dateMatch[1] : null;
+
+        // Tentukan apakah kita harus nampilin garis pembatas
+        const showDivider = currentDate && currentDate !== lastDate;
+        
+        // Update lastDate kalau ada tanggal baru yang lewat
+        if (showDivider && currentDate) {
+            lastDate = currentDate;
+        }
+
+        return (
+          <div key={idx} className="flex flex-col">
+            
+            {/* === PEMBATAS TANGGAL MUNCUL DI SINI === */}
+            {showDivider && (
+                <div className="flex items-center my-4 opacity-70">
+                    <div className="flex-1 border-t-2 border-dashed border-slate-300"></div>
+                    <span className="px-3 py-1 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white/60 backdrop-blur-sm rounded-full border border-slate-200 mx-2">
+                        {currentDate}
+                    </span>
+                    <div className="flex-1 border-t-2 border-dashed border-slate-300"></div>
+                </div>
+            )}
+
+            {/* === KONTEN LAPORAN ASLI === */}
+            <div className="relative pl-4 border-l-2 border-slate-400 mt-1 group-hover:border-blue-400 transition-colors">
+               <div className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-slate-400"></div>
+               <p className="text-sm font-bold text-slate-700 break-words leading-relaxed">{line}</p>
+            </div>
+
           </div>
-        ))}
-      </div>
-    );
-  };
+        );
+      })}
+    </div>
+  );
+};
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 relative">
