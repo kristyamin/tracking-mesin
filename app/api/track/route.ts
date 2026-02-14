@@ -19,3 +19,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Gagal mengambil data' }, { status: 500 });
   }
 }
+// fix
