@@ -51,4 +51,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Kesalahan Sistem Internal' }, { status: 500 });
   }
 }
-// fix
+
+export async function GET() {
+  return NextResponse.json({ status: "🚀 JALUR TRACKING SIAP MELUNCUR!" });
+}
