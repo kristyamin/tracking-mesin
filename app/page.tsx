@@ -35,7 +35,7 @@ export default function Home() {
     setSelectedMachine(null);
 
     try {
-        // 👇 PERUBAHAN UTAMA: Kita panggil Server API, BUKAN Supabase langsung
+
         const response = await fetch('/api/track', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -181,13 +181,13 @@ export default function Home() {
             </button>
             
             {/* LOGO (Floating Animation & Clickable to Website) */}
-            <div className="flex justify-center mb-6 mt-4">
+            <div className="flex justify-center mb-5 mt-8">
                <a 
                   href="https://djitoemesindo.com/profile" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="animate-float block cursor-pointer hover:scale-105 hover:opacity-90 transition-all duration-300"
-                  title="Kunjungi Website PT Djitoe Mesindo"
+                  title="Visit Website PT Djitoe Mesindo"
                >
                    <img src="/logo.png" alt="Logo Djitoe" className="h-24 md:h-28 w-auto object-contain drop-shadow-lg" />
                </a>
@@ -202,7 +202,7 @@ export default function Home() {
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="cursor-pointer hover:opacity-80 transition-opacity inline-block"
-                        title="Kunjungi Website PT Djitoe Mesindo"
+                        title="Visit Website PT Djitoe Mesindo"
                     >
                         <span className="animate-text-shimmer font-black">MACHINE</span>
                     </a>
