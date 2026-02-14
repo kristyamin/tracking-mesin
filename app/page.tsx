@@ -24,7 +24,7 @@ export default function Home() {
   const [creds, setCreds] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
 
-  // 1. LOGIKA SEARCH MESIN (LOGIKA ASLI DIPERTAHANKAN)
+  // 1. LOGIKA SEARCH MESIN
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idSearch) return;
@@ -34,23 +34,35 @@ export default function Home() {
     setSearchResults([]);
     setSelectedMachine(null);
 
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("order_id", idSearch.trim().toUpperCase());
+    try {
+        // 👇 PERUBAHAN UTAMA: Kita panggil Server API, BUKAN Supabase langsung
+        const response = await fetch('/api/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_id: idSearch.trim().toUpperCase() })
+        });
+        
+        // Menerima hasil yang sudah matang dari server
+        const result = await response.json();
 
-    if (error || !data || data.length === 0) {
-      setErrorMsg("❌ ID Not Found. Please check your Order ID.");
-    } else {
-      setSearchResults(data);
-      if (data.length === 1) {
-          const item = data[0];
-          setSelectedMachine({
-              ...item,
-              progress_number: parseInt(item.public_status) || 0
-          });
-      }
+        // Cek jika error atau data kosong
+        if (!response.ok || !result.data || result.data.length === 0) {
+            setErrorMsg("❌ ID Not Found. Please check your Order ID.");
+        } else {
+            // Data berhasil ditemukan
+            setSearchResults(result.data);
+            if (result.data.length === 1) {
+                const item = result.data[0];
+                setSelectedMachine({
+                    ...item,
+                    progress_number: parseInt(item.public_status) || 0
+                });
+            }
+        }
+    } catch (err) {
+        setErrorMsg("❌ Terjadi kesalahan jaringan.");
     }
+    
     setLoading(false);
   };
 
@@ -78,42 +90,29 @@ export default function Home() {
       setShowLoginModal(true);
   };
 
+  // 2. LOGIKA LOGIN STAFF (VERSI AMAN VIA SERVER)
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("username", creds.username.trim().toUpperCase())
-        .eq("password", creds.password.trim())
-        .single();
+      // Panggil Server API Login
+      const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+              username: creds.username.trim().toUpperCase(), 
+              password: creds.password.trim() 
+          })
+      });
 
-      if (error || !data) {
+      const result = await response.json();
+
+      if (!response.ok || !result.data) {
         alert("❌ Login Gagal! Username atau Password salah.");
         setCreds({ username: "", password: "" });
       } else {
-        // --- LOGIKA RESET BULANAN ---
-        const lastSeenDate = data.last_seen ? new Date(data.last_seen) : new Date(0);
-        const today = new Date();
-        
-        const isSameMonth = lastSeenDate.getMonth() === today.getMonth() && lastSeenDate.getFullYear() === today.getFullYear();
-        
-        let newCount;
-        if (isSameMonth) {
-            // Masih bulan yang sama, tambah 1
-            newCount = (data.login_count || 0) + 1;
-        } else {
-            // Sudah ganti bulan, RESET jadi 1
-            newCount = 1;
-        }
-
-        // Update ke Database
-        await supabase.from("users").update({
-            login_count: newCount,
-            last_seen: new Date().toISOString()
-        }).eq("id", data.id);
-
+        const data = result.data;
         sessionStorage.setItem("user_role", data.role);
 
         // Redirect sesuai Role
@@ -130,7 +129,7 @@ export default function Home() {
         }
       }
     } catch (err) {
-      alert("Terjadi kesalahan sistem login.");
+      alert("Terjadi kesalahan jaringan.");
       setCreds({ username: "", password: "" }); 
     }
     setLoading(false);
@@ -181,16 +180,32 @@ export default function Home() {
                 </svg>
             </button>
             
-            {/* LOGO (Floating Animation) */}
+            {/* LOGO (Floating Animation & Clickable to Website) */}
             <div className="flex justify-center mb-6 mt-4">
-               <div className="animate-float">
+               <a 
+                  href="https://djitoemesindo.com/profile" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="animate-float block cursor-pointer hover:scale-105 hover:opacity-90 transition-all duration-300"
+                  title="Kunjungi Website PT Djitoe Mesindo"
+               >
                    <img src="/logo.png" alt="Logo Djitoe" className="h-24 md:h-28 w-auto object-contain drop-shadow-lg" />
-               </div>
+               </a>
             </div>
             
-            {/* JUDUL (Shimmer Animation) */}
+            {/* JUDUL (Shimmer Animation & Clickable) */}
             <div className="text-center mb-10">
-                <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tight mb-2 whitespace-nowrap">                    TRACKING <span className="animate-text-shimmer font-black">MACHINE</span>
+                <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tight mb-2 whitespace-nowrap">             
+                    TRACKING{" "}
+                    <a 
+                        href="https://djitoemesindo.com/product" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="cursor-pointer hover:opacity-80 transition-opacity inline-block"
+                        title="Kunjungi Website PT Djitoe Mesindo"
+                    >
+                        <span className="animate-text-shimmer font-black">MACHINE</span>
+                    </a>
                 </h1>
                 <div className="h-1 w-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mx-auto mb-3"></div>
                 <p className="text-slate-400 text-[10px] font-bold tracking-[0.3em] uppercase">MONITORING PROGRESS SYSTEM</p>
@@ -230,25 +245,30 @@ export default function Home() {
             <div className="mt-10 pt-6 border-t border-slate-100">
                 <p className="text-[10px] font-bold text-slate-300 uppercase mb-4 tracking-widest text-center">Install Application</p>
                 <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => setShowAndroidGuide(true)} className="flex flex-col items-center justify-center bg-white border border-slate-100 py-4 px-2 rounded-2xl hover:border-green-400 hover:bg-green-50/50 hover:shadow-md transition-all cursor-pointer text-center group duration-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" className="w-6 h-6 mb-2 text-slate-400 group-hover:text-green-500 group-hover:scale-110 transition duration-300">
+                 
+                    {/* TOMBOL ANDROID (Warna Hijau Bawaan) */}
+                    <button onClick={() => setShowAndroidGuide(true)} className="flex flex-col items-center justify-center bg-white border border-slate-100 py-4 px-2 rounded-2xl hover:border-green-400 hover:bg-green-50/50 hover:shadow-md active:scale-95 transition-all cursor-pointer text-center group duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" className="w-6 h-6 mb-2 text-green-500 group-hover:scale-110 transition duration-300">
                           <path d="M420.55,301.93a24,24,0,1,1,24-24,24,24,0,0,1-24,24m-265.1,0a24,24,0,1,1,24-24,24,24,0,0,1-24,24m273.7-144.48,47.94-83a10,10,0,1,0-17.32-10h0L413.66,144.4a286.43,286.43,0,0,0-251.32,0L116.14,64.44a10,10,0,1,0-17.32,10h0l47.94,83C64.53,202.22,8.24,285.55,0,384H576c-8.24-98.45-64.53-181.78-146.85-226.55"/>
                         </svg>
-                        <p className="text-[10px] font-black uppercase text-slate-600 group-hover:text-green-600 transition">Android</p>
+                        <p className="text-[10px] font-black uppercase text-green-600 transition">Android</p>
                     </button>
-                    <button onClick={() => setShowIOSGuide(true)} className="flex flex-col items-center justify-center bg-white border border-slate-100 py-4 px-2 rounded-2xl hover:border-slate-800 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer text-center group duration-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" className="w-6 h-6 mb-2 text-slate-400 group-hover:text-slate-800 group-hover:scale-110 transition duration-300">
+
+                    {/* TOMBOL APPLE (Warna Hitam Bawaan) */}
+                    <button onClick={() => setShowIOSGuide(true)} className="flex flex-col items-center justify-center bg-white border border-slate-100 py-4 px-2 rounded-2xl hover:border-slate-800 hover:bg-slate-50 hover:shadow-md active:scale-95 transition-all cursor-pointer text-center group duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" className="w-6 h-6 mb-2 text-slate-800 group-hover:scale-110 transition duration-300">
                           <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-46.6-35.5-4.6-86.7 18.1-110.6 18.1-23.9 0-67.3-20.9-101.2-19.4-49.2 1.8-88.7 26.9-113.3 69.5-40.5 69.4-10.5 172.2 29.2 229.6 19.2 27.9 40.9 58.4 70.5 58.4 28.1 0 38.6-18.1 72.3-18.1 34.2 0 43.7 18.1 73.5 18.1 29.2 0 47.7-25.5 65.8-51.1 20.4-28.6 28.8-41.2 32.1-42.4-17.9-7.7-31.2-23.6-33.6-49.3zM248.3 52.3c22.4-26.9 37.6-64.1 33.4-101.2-32.1 2.5-71.3 21.1-94.2 48-20.6 24.1-38.6 61.9-33.4 98.9 35.8 2.8 72.5-19.1 94.2-45.7z"/>
                         </svg>
-                        <p className="text-[10px] font-black uppercase text-slate-600 group-hover:text-slate-900 transition">iPhone / iOS</p>
+                        <p className="text-[10px] font-black uppercase text-slate-800 transition">iPhone / iOS</p>
                     </button>
+
                 </div>
             </div>
             
             {/* FOOTER VERSI LINK AKTIF */}
             <div className="mt-8 text-center opacity-60 hover:opacity-100 transition-opacity">
                 <p className="text-slate-400 text-[9px] font-bold tracking-[0.2em] uppercase">
-                    Djitoe Mesindo System V2.0 © {new Date().getFullYear()}
+                    Djitoe Mesindo System V2.1 © {new Date().getFullYear()}
                 </p>
                 <a 
                     href="https://djitoemesindo.com/" 
