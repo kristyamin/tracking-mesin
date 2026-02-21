@@ -14,6 +14,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  const [showInfo, setShowInfo] = useState(false);
+
   // --- STATE MODAL ---
   const [selectedDetail, setSelectedDetail] = useState<string | null>(null); 
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -160,6 +162,20 @@ export default function Home() {
           -webkit-background-clip: text;
           animation: shimmer 3s linear infinite;
         }
+/* Tambahan Animasi Gear Berputar Lambat */
+        @keyframes spin-slow {
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-slow-reverse {
+          100% { transform: rotate(-360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 25s linear infinite;
+        }
+        .animate-spin-slow-reverse {
+          animation: spin-slow-reverse 35s linear infinite;
+        }
+
       `}</style>
 
       {/* BACKGROUND DECORATION */}
@@ -172,7 +188,29 @@ export default function Home() {
         {/* === TAMPILAN 1: FORM PENCARIAN (HOME) === */}
         {searchResults.length === 0 && (
           <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden p-8 border border-white/50 relative animate-in fade-in slide-in-from-bottom-8 duration-700">            
+            {/* --- WATERMARK ANIMASI GEAR MESIN (BACKGROUND) --- */}
+            {/* Gear Atas Kanan (Putar Kanan) */}
+            <div className="absolute -top-24 -right-24 text-slate-200/40 pointer-events-none animate-spin-slow z-0">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-[300px] h-[300px]">
+                    <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                </svg>
+            </div>
             
+            {/* Gear Bawah Kiri (Putar Kiri) */}
+            <div className="absolute -bottom-16 -left-16 text-slate-200/50 pointer-events-none animate-spin-slow-reverse z-0">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-[200px] h-[200px]">
+                    <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                </svg>
+            </div>
+            
+            {/* ⚠️ Pastikan sisa kode kamu (Tombol Login, Logo, Judul) berada DI BAWAH sini ya beb! */}
+            {/* Tombol Info Navigasi (Kiri Atas) */}
+            <button onClick={() => setShowInfo(true)} className="absolute top-6 left-6 p-2 rounded-full text-slate-300 hover:text-blue-600 hover:bg-blue-50 transition-all text-xl z-10" title="Informasi Navigasi">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                </svg>
+            </button>
+
             {/* Tombol Login */}
             <button onClick={handleOpenLogin} className="absolute top-6 right-6 p-2 rounded-full text-slate-300 hover:text-blue-600 hover:bg-blue-50 transition-all text-xl" title="Staff Login">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
@@ -197,12 +235,12 @@ export default function Home() {
             <div className="text-center mb-10">
                 <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tight mb-2 whitespace-nowrap">             
                     TRACKING{" "}
-                    <a 
+                   <a 
                         href="https://djitoemesindo.com/product" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="cursor-pointer hover:opacity-80 transition-opacity inline-block"
-                        title="Visit Website PT Djitoe Mesindo"
+                        className="cursor-pointer inline-block active:scale-95 transition-transform"
+                        title="Lihat Katalog Mesin"
                     >
                         <span className="animate-text-shimmer font-black">MACHINE</span>
                     </a>
@@ -268,8 +306,7 @@ export default function Home() {
             {/* FOOTER VERSI LINK AKTIF */}
             <div className="mt-8 text-center opacity-60 hover:opacity-100 transition-opacity">
                 <p className="text-slate-400 text-[9px] font-bold tracking-[0.2em] uppercase">
-                    Djitoe Mesindo System V2.1 © {new Date().getFullYear()}
-                </p>
+                    Djitoe Mesindo System 2.5 © {new Date().getFullYear()}</p>
                 <a 
                     href="https://djitoemesindo.com/" 
                     target="_blank" 
@@ -453,6 +490,41 @@ export default function Home() {
                   )}
                   <button onClick={() => setSelectedDetail(null)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all">CLOSE</button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL INFO NAVIGASI */}
+        {showInfo && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in zoom-in-95">
+            <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative border border-white/50">
+              <button onClick={() => setShowInfo(false)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+              </button>
+
+              <div className="flex justify-center mb-6">
+                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-blue-100">💡</div>
+              </div>
+              <h2 className="text-xl font-black text-center text-slate-800 uppercase mb-6 tracking-tight">Navigation Guide</h2>
+
+              <div className="space-y-4 mb-8">
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <p className="text-sm font-bold text-slate-700 mb-1 flex items-center gap-2">🌐 Main Website</p>
+                      <p className="text-xs text-slate-500 leading-relaxed">Tap the <b>Djitoe Logo</b> at the top, or the website link at the bottom of this page.</p>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                      <p className="text-sm font-bold text-blue-700 mb-1 flex items-center gap-2">⚙️ Machine Catalog</p>
+                      <p className="text-xs text-blue-600/80 leading-relaxed">Tap the blue <b className="text-blue-600">MACHINE</b> text to view our complete product catalog.</p>
+                  </div>
+                  
+                  <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
+                      <p className="text-sm font-bold text-green-700 mb-1 flex items-center gap-2">📱 Install App</p>
+                      <p className="text-xs text-green-700/80 leading-relaxed">Tap the <b className="text-green-600">Android</b> or <b className="text-slate-800">iPhone/iOS</b> icon below to install this system directly to your device. Enjoy faster access without a browser!</p>
+                  </div>
+              </div>
+
+              <button onClick={() => setShowInfo(false)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black hover:bg-black shadow-xl transition-all text-sm active:scale-95 uppercase">Got It</button>
             </div>
           </div>
         )}
