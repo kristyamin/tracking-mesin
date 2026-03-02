@@ -365,7 +365,7 @@ export default function Home() {
         {selectedMachine && (
           <div className="animate-in fade-in slide-in-from-bottom duration-500">
             <button onClick={handleBack} className="mb-6 bg-white/80 backdrop-blur px-5 py-3 rounded-full shadow-sm text-slate-500 text-xs font-bold hover:text-blue-600 hover:shadow-md flex items-center gap-2 transition-all w-fit mx-auto border border-white">
-                ← {searchResults.length > 1 ? "PILIH MESIN LAIN" : "CHECK ANOTHER ID"}
+                ← {searchResults.length > 1 ? "CHOOSE MACHINE" : "CHECK ANOTHER ID"}
             </button>
             <div className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl overflow-hidden p-6 border border-white relative">
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-3xl mb-8 border border-blue-100">
