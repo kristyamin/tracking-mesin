@@ -278,9 +278,9 @@ export default function Home() {
             <div className="mt-6 pt-6 border-t border-slate-100/60">
                 <button 
                     onClick={() => router.push('/request')}
-                    className="w-full bg-transparent border-2 border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 py-3.5 rounded-2xl font-black transition-all duration-300 text-xs tracking-widest uppercase flex justify-center items-center gap-2 group active:scale-95 shadow-sm"
+                    className="w-full bg-transparent border-2 border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 py-3.5 px-2 rounded-2xl font-black transition-all duration-300 text-[10px] sm:text-xs whitespace-nowrap tracking-widest uppercase flex justify-center items-center gap-1.5 sm:gap-2 group active:scale-95 shadow-sm"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 group-hover:rotate-12 transition-transform duration-300">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.492-3.053 5.084 1.695-1.373-1.373M11.42 15.17l-4.242 4.242a1.5 1.5 0 0 1-2.122 0l-2.122-2.122a1.5 1.5 0 0 1 0-2.122l4.242-4.242" />
                     </svg>
                     REQUEST SERVICE & MAINTENANCE
