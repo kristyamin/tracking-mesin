@@ -123,6 +123,7 @@ export default function SuperAdminPage() {
   const groupBoss = users.filter(u => u.role === 'boss');
   const groupAdmin = users.filter(u => u.role === 'admin');
   const groupInventaris = users.filter(u => u.role === 'mess_admin' || u.role === 'mess_viewer');
+  const groupRequestAdmin = users.filter(u => u.role === 'request_admin'); // TAMBAHAN: Admin Request
 
   // Komponen Kartu User
   const UserCard = ({ user, icon, colorClass, badgeColor, roleLabel }: any) => {
@@ -253,6 +254,27 @@ export default function SuperAdminPage() {
             </div>
         )}
 
+        {/* --- GROUP 5: ADMIN REQUEST (TAMBAHAN BARU) --- */}
+        {!loading && groupRequestAdmin.length > 0 && (
+            <div className="mb-10 animate-in fade-in slide-in-from-bottom duration-1000">
+                <h3 className="text-cyan-400 font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400"></span> Admin Request / Service ({groupRequestAdmin.length})
+                </h3>
+                <div className="space-y-3">
+                    {groupRequestAdmin.map(u => (
+                        <UserCard 
+                            key={u.id} 
+                            user={u} 
+                            icon="🎧" 
+                            colorClass="blue" 
+                            badgeColor="bg-blue-500/20 text-blue-300" 
+                            roleLabel="ADMIN REQUEST" 
+                        />
+                    ))}
+                </div>
+            </div>
+        )}
+
         {/* MODAL EDIT / TAMBAH */}
         {showModal && (
             <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-in zoom-in-95 duration-200">
@@ -274,18 +296,18 @@ export default function SuperAdminPage() {
                         </div>
                         <div>
                             <label className="text-[10px] font-black text-blue-500 uppercase ml-1 mb-1 block">Role / Jabatan</label>
-                            <div className="relative">
-                                <select className="w-full p-4 bg-slate-950 border border-slate-700 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
-                                    value={formUser.role} onChange={(e) => setFormUser({...formUser, role: e.target.value})}>
-                                    <option value="admin">🔵 ADMIN MESIN (PRODUKSI)</option>
-                                    <option value="boss">🟡 BOSS / DIREKSI</option>
-                                    <option value="super_admin">🟣 SUPER ADMIN</option>
-                                    <option value="" disabled>──────────────────</option>
-                                    <option value="mess_admin">🏡 ADMIN HRD (INVENTARIS)</option>
-                                    <option value="mess_viewer">👀 VIEWER (AKUNTING/BOSS)</option>
-                                </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">▼</div>
-                            </div>
+                            {/* PEMBAHARUAN: Ditambahkan size={4} dan dihilangkan absolute panahnya agar menjadi kotak list scroll */}
+                            <select className="w-full p-4 bg-slate-950 border border-slate-700 rounded-xl font-bold text-white focus:outline-none focus:border-blue-500 cursor-pointer overflow-y-auto"
+                                size={4}
+                                value={formUser.role} onChange={(e) => setFormUser({...formUser, role: e.target.value})}>
+                                <option value="admin">🔵 ADMIN MESIN (PRODUKSI)</option>
+                                <option value="boss">🟡 BOSS / DIREKSI</option>
+                                <option value="super_admin">🟣 SUPER ADMIN</option>
+                                <option value="" disabled>──────────────────</option>
+                                <option value="mess_admin">🏡 ADMIN HRD (INVENTARIS)</option>
+                                <option value="mess_viewer">👀 VIEWER (AKUNTING/BOSS)</option>
+                                <option value="request_admin">🎧 Admin Request (Service)</option>
+                            </select>
                         </div>
                     </div>
 

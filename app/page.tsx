@@ -126,6 +126,8 @@ export default function Home() {
           router.push("/super-admin");
         } else if (data.role === "mess_admin" || data.role === "mess_viewer") {
           router.push("/inventory");
+        } else if (data.role === "request_admin") {  // <--- INI TAMBAHAN BARUNYA BEB!
+          router.push("/admin-request");
         } else {
           alert("Akun tidak memiliki akses.");
         }
@@ -271,6 +273,19 @@ export default function Home() {
                   ) : "TRACK STATUS"}
               </button>
             </form>
+
+            {/* --- TOMBOL REQUEST SERVICE (BARU) --- */}
+            <div className="mt-6 pt-6 border-t border-slate-100/60">
+                <button 
+                    onClick={() => router.push('/request')}
+                    className="w-full bg-transparent border-2 border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 py-3.5 rounded-2xl font-black transition-all duration-300 text-xs tracking-widest uppercase flex justify-center items-center gap-2 group active:scale-95 shadow-sm"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.492-3.053 5.084 1.695-1.373-1.373M11.42 15.17l-4.242 4.242a1.5 1.5 0 0 1-2.122 0l-2.122-2.122a1.5 1.5 0 0 1 0-2.122l4.242-4.242" />
+                    </svg>
+                    REQUEST SERVICE & MAINTENANCE
+                </button>
+            </div>
             
             {/* Error Message (jika ada) */}
             {errorMsg && (
@@ -497,7 +512,7 @@ export default function Home() {
         {/* MODAL INFO NAVIGASI */}
         {showInfo && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in zoom-in-95">
-            <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative border border-white/50">
+            <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative border border-white/50 max-h-[90vh] overflow-y-auto overflow-x-hidden custom-scrollbar">
               <button onClick={() => setShowInfo(false)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
               </button>
@@ -516,6 +531,12 @@ export default function Home() {
                   <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
                       <p className="text-sm font-bold text-blue-700 mb-1 flex items-center gap-2">⚙️ Machine Catalog</p>
                       <p className="text-xs text-blue-600/80 leading-relaxed">Tap the blue <b className="text-blue-600">MACHINE</b> text to view our complete product catalog.</p>
+                  </div>
+
+                  {/* 🛠️ TAMBAHAN BARU: REQUEST SERVICE */}
+                  <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+                      <p className="text-sm font-bold text-amber-700 mb-1 flex items-center gap-2">🛠️ Service Request</p>
+                      <p className="text-xs text-amber-700/90 leading-relaxed">Tap the <b className="text-amber-600">REQUEST</b> button to fill out the official service form. Our representative will contact you shortly to coordinate the deployment of our expert team to your facility.</p>
                   </div>
                   
                   <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
