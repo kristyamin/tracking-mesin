@@ -48,13 +48,25 @@ export default function AdminRequestDashboard() {
     { value: '10', label: 'Oktober' }, { value: '11', label: 'November' }, { value: '12', label: 'Desember' }
   ];
 
+  // ==========================================
+  // 🕵️‍♂️ MATA-MATA NINJA & CEK AKSES
+  // ==========================================
   useEffect(() => {
     const role = sessionStorage.getItem("user_role");
     if (!role || (role !== "admin" && role !== "super_admin" && role !== "boss" && role !== "request_admin")) {
       alert("Akses Ditolak! Silakan login terlebih dahulu.");
       router.push("/");
     } else {
-      fetchRequests();
+      // 1. Tarik data pertama kali buka web (muncul loading)
+      fetchRequests(); 
+
+      // 2. Jurus Ninja: Auto-Refresh diam-diam setiap 15 detik!
+      const intervalId = setInterval(() => {
+        fetchRequests(true); // true = mode ninja (tanpa loading UI)
+      }, 15000); // 15000 milidetik = 15 detik
+
+      // 3. Bersihkan memori timer kalau admin logout/pindah halaman
+      return () => clearInterval(intervalId); 
     }
   }, []);
 
@@ -65,16 +77,21 @@ export default function AdminRequestDashboard() {
     return d.toDateString() === today.toDateString();
   };
 
-  const fetchRequests = async () => {
-    setLoading(true);
+  const fetchRequests = async (isBackground = false) => {
+    // Kalau background, jangan munculin tulisan "Loading Data..." biar layar gak kedip
+    if (!isBackground) setLoading(true); 
     try {
-      const response = await fetch('/api/get-requests');
+      // 🚨 MANTRA ANTI-BASI: Tambahkan cache: 'no-store' dan parameter waktu!
+      const response = await fetch(`/api/get-requests?t=${new Date().getTime()}`, { 
+        cache: 'no-store' 
+      });
+      
       const result = await response.json();
       if (response.ok && result.data) setRequests(result.data);
     } catch (error) {
       console.error("Gagal memuat data", error);
     }
-    setLoading(false);
+    if (!isBackground) setLoading(false);
   };
 
   // ==========================================

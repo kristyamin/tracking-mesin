@@ -171,12 +171,12 @@ export default function RequestService() {
               
               {/* Link Telepon */}
               <a href="tel:+6281275599185" className="flex items-center gap-2 bg-slate-100 hover:bg-blue-100 border border-slate-200 hover:border-blue-300 text-slate-800 hover:text-blue-700 px-4 py-2 text-xs font-bold transition-all rounded-sm cursor-pointer">
-                📞 +62 812-7559-9185
+                📞 +62 8xx-5559-xxxx
               </a>
 
               {/* Link Email */}
               <a href="mailto:Roydjitoe@gmail.com" className="flex items-center gap-2 bg-slate-100 hover:bg-red-100 border border-slate-200 hover:border-red-300 text-slate-800 hover:text-red-700 px-4 py-2 text-xs font-bold transition-all rounded-sm cursor-pointer">
-                ✉️ Roydjitoe@gmail.com
+                ✉️ Roydjitoe@xxxxx.com
               </a>
             </div>
           </div>
