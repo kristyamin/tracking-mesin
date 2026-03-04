@@ -176,7 +176,7 @@ export default function RequestService() {
 
               {/* Link Email */}
               <a href="mailto:Roydjitoe@gmail.com" className="flex items-center gap-2 bg-slate-100 hover:bg-red-100 border border-slate-200 hover:border-red-300 text-slate-800 hover:text-red-700 px-4 py-2 text-xs font-bold transition-all rounded-sm cursor-pointer">
-                ✉️ Roydjitoe@xxxxx.com
+                ✉️ Roydjitoe@xxxxx.xxxxxx
               </a>
             </div>
           </div>
