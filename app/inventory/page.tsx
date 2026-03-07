@@ -109,8 +109,7 @@ const [loading, setLoading] = useState(true);
   
   // PRINT STATE
 const [isReportMode, setIsReportMode] = useState(false);
-const [reportType, setReportType] = useState<"RESIDENT" | "VEHICLE" | "IT" | "UNIFORM" | "APAR">("RESIDENT");
-const [vehicleReportCategory, setVehicleReportCategory] = useState("");
+const [reportType, setReportType] = useState<"RESIDENT" | "VEHICLE" | "IT" | "UNIFORM" | "APAR" | "AC">("RESIDENT");const [vehicleReportCategory, setVehicleReportCategory] = useState("");
 const [printLocationFilter, setPrintLocationFilter] = useState(""); // Wadah untuk lokasi print
 
   // DATA STATE
@@ -235,11 +234,12 @@ const handlePrintGA = (loc: any) => {
     setTimeout(() => { window.print(); }, 500); 
   };
 
-  // --- TAMBAHAN UNTUK APAR ---
-  const handlePrintAPAR = (loc: any) => { 
-    setReportType("APAR"); // Kita set tipe laporannya APAR
+  // --- TAMBAHAN UNTUK APAR & AC ---
+  const handlePrintAPAR = (loc: any, moduleName: string) => { 
+    // moduleName ini yang akan membedakan apakah tombol diklik dari tab AC atau APAR
+    setReportType(moduleName === "AC" ? "AC" : "APAR"); 
     setPrintLocationFilter(typeof loc === 'string' ? loc : "");
-    setIsReportMode(true); 
+    setIsReportMode(true);
     setTimeout(() => { window.print(); }, 500); 
   };
 
@@ -826,8 +826,10 @@ const handleAddResident = async () => {
                         reportType === 'RESIDENT' ? 'PENGHUNI MESS' : 
                         (reportType === 'UNIFORM' ? 'GA / SERAGAM' : 
                         (reportType === 'APAR' ? 'PEMERIKSAAN APAR' : 
-                        `ASET ${reportType === 'VEHICLE' ? vehicleReportCategory : 'IT & LAPTOP'}`))
-                      }
+                        (reportType === 'AC' ? 'PEMELIHARAAN AC' : 
+                        `ASET ${reportType === 'VEHICLE' ? vehicleReportCategory : 'IT & LAPTOP'}`)))
+                       }
+
                     </h2>
                     <p className="text-xs">Per Tanggal: {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                     {printLocationFilter && <p className="text-xs font-bold bg-black text-white px-2 inline-block mt-1">LOKASI: {printLocationFilter}</p>}
@@ -939,6 +941,20 @@ const handleAddResident = async () => {
                     <tbody>
                         {finalPrintAPAR.length === 0 ? <tr><td colSpan={7} className="text-center p-4 italic">Tidak ada data.</td></tr> : finalPrintAPAR.map((item, idx) => (
                             <tr key={item.id}><td className="border border-black p-2 text-center">{idx + 1}</td><td className="border border-black p-2 uppercase font-bold">{item.nomor_tabung}</td><td className="border border-black p-2 uppercase font-bold text-xs">{item.lokasi}</td><td className="border border-black p-2 uppercase">{item.detail_lokasi}</td><td className="border border-black p-2 text-center text-xs">{item.jenis} ({item.berat_kg}kg)</td><td className="border border-black p-2 text-center font-bold text-xs">{item.kondisi}</td><td className="border border-black p-2 text-center text-xs font-mono">{item.tgl_exp ? formatDateIndo(item.tgl_exp) : "-"}</td></tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
+
+            {/* 6. AC */}
+            {reportType === "AC" && (
+                <table className="w-full text-left text-sm border-collapse border border-black">
+                    <thead><tr className="bg-gray-200 text-black"><th className="border border-black p-2 w-10 text-center">No</th><th className="border border-black p-2">Merk & PK</th><th className="border border-black p-2">Lokasi</th><th className="border border-black p-2">Detail</th><th className="border border-black p-2 text-center">Tahun</th><th className="border border-black p-2 text-center">Kondisi</th><th className="border border-black p-2 text-center">Service Rutin</th></tr></thead>
+                    <tbody>
+                         {acList.filter((a:any) => (!printLocationFilter || a.lokasi === printLocationFilter)).length === 0 ? 
+                            <tr><td colSpan={7} className="text-center p-4 italic">Tidak ada data.</td></tr> : 
+                            acList.filter((a:any) => (!printLocationFilter || a.lokasi === printLocationFilter)).map((item:any, idx:number) => (
+                            <tr key={item.id}><td className="border border-black p-2 text-center">{idx + 1}</td><td className="border border-black p-2 uppercase font-bold">{item.brand} ({item.pk || "-"} PK)</td><td className="border border-black p-2 uppercase font-bold text-xs">{item.lokasi}</td><td className="border border-black p-2 uppercase">{item.detail_lokasi}</td><td className="border border-black p-2 text-center text-xs">{item.tahun_pasang || "-"}</td><td className="border border-black p-2 text-center font-bold text-xs">{item.kondisi}</td><td className="border border-black p-2 text-center text-xs font-mono">{item.tgl_service_berikutnya ? formatDateIndo(item.tgl_service_berikutnya) : "-"}</td></tr>
                         ))}
                     </tbody>
                 </table>

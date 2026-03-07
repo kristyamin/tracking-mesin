@@ -193,10 +193,9 @@ export default function TabAPAR({
                                 {filterArea !== "ALL" && <span className="text-slate-800"> (Area: {filterArea})</span>}
                             </p>
                         </div>
-                        {role === 'mess_admin' && <button onClick={() => onPrint(selectedLoc)} className="bg-slate-100 text-slate-600 p-2 rounded-lg text-xs font-bold hover:bg-slate-200">🖨️ CETAK</button>}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        
+                        {role === 'mess_admin' && <button onClick={() => onPrint(selectedLoc, module)} className="bg-slate-100 text-slate-600 p-2 rounded-lg text-xs font-bold hover:bg-slate-200">🖨️ CETAK</button>}                    </div>
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         
                         {/* --- LOOPING DATA APAR --- */}
                         {module === 'APAR' && filteredAPAR.map((item: any) => (
