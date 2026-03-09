@@ -10,12 +10,18 @@ export default function TabMess({ messList, residentList, role, onSelectMess, on
 
   // Helper Status
   const getStatusIndicator = (dateString: string, type: string) => {
+    
       if (!dateString) return <span className="text-gray-300 text-[9px] font-mono">--</span>;
       const diffDays = Math.ceil((new Date(dateString).getTime() - new Date().setHours(0,0,0,0)) / (86400000));
       if (diffDays < 0) return <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[9px] font-black animate-pulse">🚨 TELAT {Math.abs(diffDays)} HR ({type})</span>;
       else if (diffDays <= 1) return <span className="bg-red-100 text-red-700 border border-red-300 px-2 py-0.5 rounded text-[9px] font-black animate-pulse">🔴 BESOK! ({type})</span>;
       else if (diffDays <= 30) return <span className="bg-orange-100 text-orange-700 border border-orange-300 px-2 py-0.5 rounded text-[9px] font-black">🟠 {diffDays} HR LAGI ({type})</span>;
       else return <span className="bg-green-50 text-green-600 px-2 py-0.5 rounded text-[9px] font-bold border border-green-200">🟢 OK ({type})</span>;
+  };
+
+const formatDateIndo = (dateString: string) => {
+      if (!dateString) return "-";
+      return new Date(dateString).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
   };
 
   return (
@@ -29,8 +35,20 @@ export default function TabMess({ messList, residentList, role, onSelectMess, on
                         <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop" alt="Mess" className="absolute inset-0 w-full h-full object-cover opacity-80" />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent z-10"></div>
                         <div className="absolute bottom-3 left-4 z-20"><h3 className="text-lg font-black text-white uppercase tracking-tight shadow-black drop-shadow-md">{mess.nama_mess}</h3><p className="text-[10px] text-slate-300 font-medium">{mess.alamat || "Alamat belum diisi"}</p></div>
-                        <div className="absolute bottom-3 right-4 z-20 flex flex-col items-end">{mess.tgl_cuci_ac ? (<div className="scale-90 origin-right">{getStatusIndicator(mess.tgl_cuci_ac, "AC")}</div>) : (<span className="bg-slate-800/50 text-white px-2 py-0.5 rounded text-[9px] font-bold backdrop-blur-sm">AC Belum Ada Jadwal</span>)}</div>
-                        {role === 'mess_admin' && (<div className="absolute top-3 right-3 z-30 flex gap-2"><button onClick={(e) => onEdit(mess, e)} className="w-8 h-8 bg-white/20 backdrop-blur-sm hover:bg-blue-600 hover:text-white rounded-full flex items-center justify-center transition shadow-lg text-white">✏️</button><button onClick={(e) => { e.stopPropagation(); onDelete('mess_locations', mess.id); }} className="w-8 h-8 bg-white/20 backdrop-blur-sm hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition shadow-lg text-white">🗑️</button></div>)}
+                        <div className="absolute bottom-3 right-4 z-20 flex flex-col items-end gap-1">
+                            {mess.tgl_cuci_ac ? (
+                                <>
+                                    <span className="text-[9px] text-white font-bold bg-slate-900/60 px-2 py-0.5 rounded backdrop-blur-sm border border-slate-600/50">
+                                        📅 {formatDateIndo(mess.tgl_cuci_ac)}
+                                    </span>
+                                    <div className="scale-90 origin-right">
+                                        {getStatusIndicator(mess.tgl_cuci_ac, "AC")}
+                                    </div>
+                                </>
+                            ) : (
+                                <span className="bg-slate-800/50 text-white px-2 py-0.5 rounded text-[9px] font-bold backdrop-blur-sm">AC Belum Ada Jadwal</span>
+                            )}
+                        </div>                        {role === 'mess_admin' && (<div className="absolute top-3 right-3 z-30 flex gap-2"><button onClick={(e) => onEdit(mess, e)} className="w-8 h-8 bg-white/20 backdrop-blur-sm hover:bg-blue-600 hover:text-white rounded-full flex items-center justify-center transition shadow-lg text-white">✏️</button><button onClick={(e) => { e.stopPropagation(); onDelete('mess_locations', mess.id); }} className="w-8 h-8 bg-white/20 backdrop-blur-sm hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition shadow-lg text-white">🗑️</button></div>)}
                     </div>
 <div className="p-5 flex-1 flex flex-col justify-between">
                         <div className="flex justify-between items-start mb-4">
