@@ -19,9 +19,16 @@ export default function TabMess({ messList, residentList, role, onSelectMess, on
       else return <span className="bg-green-50 text-green-600 px-2 py-0.5 rounded text-[9px] font-bold border border-green-200">🟢 OK ({type})</span>;
   };
 
-const formatDateIndo = (dateString: string) => {
+  const formatDateIndo = (dateString: string) => {
       if (!dateString) return "-";
-      return new Date(dateString).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+      try {
+          const d = new Date(dateString);
+          if (isNaN(d.getTime())) return "-"; 
+          return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+      } catch (error) {
+          // Kalau browser komputer admin jadul dan gagal nge-format, jangan crash!
+          return dateString;
+      }
   };
 
   return (
