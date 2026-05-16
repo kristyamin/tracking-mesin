@@ -1,5 +1,6 @@
 "use client";
 
+import imageCompression from 'browser-image-compression';
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -111,12 +112,32 @@ export default function AdminPage() {
   };
 
   const uploadToSupabase = async (file: File, idPesanan: string) => {
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${idPesanan}-${Date.now()}.${fileExt}`;
-    const { error } = await supabase.storage.from("mesin-images").upload(fileName, file);
-    if (error) throw error;
-    const { data } = supabase.storage.from("mesin-images").getPublicUrl(fileName);
-    return data.publicUrl;
+    
+    // --- 1. SETTING KOMPRESI ---
+    const options = {
+      maxSizeMB: 0.3,          // Paksa foto jadi maksimal 300 KB saja (Kecil banget!)
+      maxWidthOrHeight: 1280,  // Resolusinya dibatasi maksimal 1280px (Tetap HD kok)
+      useWebWorker: true,
+      fileType: "image/webp"   // Ubah format jadi WebP biar ukurannya makin irit
+    };
+
+    try {
+      // --- 2. PROSES KOMPRES FOTO DULU ---
+      const compressedFile = await imageCompression(file, options);
+      
+      // --- 3. BARU UPLOAD KE SUPABASE ---
+      const fileName = `${idPesanan}-${Date.now()}.webp`; 
+      
+      const { error } = await supabase.storage.from("mesin-images").upload(fileName, compressedFile);
+      if (error) throw error;
+      
+      const { data } = supabase.storage.from("mesin-images").getPublicUrl(fileName);
+      return data.publicUrl;
+
+    } catch (error) {
+      console.error("Gagal kompresi/upload foto:", error);
+      throw error;
+    }
   };
 
   // --- LOGIC 1: INPUT BARU ---
@@ -333,10 +354,45 @@ const handleLaporanBoss = async () => {
   useEffect(() => { if(activeTab === "list") fetchListData(); }, [activeTab]);
 
   const handlePermanentDelete = async (id: string) => {
-      if(!confirm("⚠️ YAKIN HAPUS SELAMANYA?")) return;
-      await supabase.from("orders").delete().eq("id", id);
-      alert("Data dihapus.");
-      fetchListData(); 
+      if(!confirm("⚠️ YAKIN HAPUS SELAMANYA BESERTA FOTONYA?")) return;
+
+      try {
+        // 1. Intip data pesanan dulu buat nyari link fotonya
+        const { data: mesinTarget, error: fetchError } = await supabase
+          .from("orders")
+          .select("foto_url")
+          .eq("id", id)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        // 2. Kalau mesin ini punya foto, kita hapus dulu fotonya di Storage
+        if (mesinTarget && mesinTarget.foto_url) {
+          const urlParts = mesinTarget.foto_url.split("/");
+          const fileName = urlParts.pop(); 
+
+          if (fileName) {
+            // Eksekusi bakar foto di Storage
+            const { error: storageError } = await supabase.storage
+              .from("mesin-images")
+              .remove([fileName]);
+
+            if (storageError) {
+              console.error("Gagal hapus foto di storage:", storageError);
+            }
+          }
+        }
+
+        // 3. Setelah fotonya hangus, baru deh hapus data teksnya dari Database
+        const { error: dbError } = await supabase.from("orders").delete().eq("id", id);
+        if (dbError) throw dbError;
+
+        alert("✅ Data dan Foto berhasil dihapus!");
+        fetchListData(); 
+
+      } catch (error: any) {
+        alert("Gagal menghapus: " + error.message);
+      }
   };
 
   const handlePrint = () => {

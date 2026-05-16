@@ -7,37 +7,43 @@ export async function POST(request: Request) {
   
   try {
     const body = await request.json();
-    const { username, password } = body;
-    console.log("👤 Username:", username);
+    // 1. TANGKAP KODE RAHASIA DARI FRONTEND
+    const { username, password, portal } = body;
+    
+    // 2. TENTUKAN TABEL (Pintu Pintar)
+    // Kalau dari Gembok Slide 2 (gatepass), cek tabel users_gp. Selain itu cek tabel users.
+    const tableName = portal === "gatepass" ? "users_gp" : "users";
 
-    // 1. Cek username & password
+    console.log(`👤 Username: ${username} | 🏢 Tabel Jalur: ${tableName}`);
+
+    // 3. Cek username & password di tabel yang sesuai
     const { data, error } = await supabase
-      .from("users")
+      .from(tableName)
       .select("*")
       .eq("username", username)
       .eq("password", password)
       .single();
 
     if (error || !data) {
-      console.log("❌ LOGIN GAGAL: User tidak ditemukan atau salah password.");
+      console.log(`❌ LOGIN GAGAL: User tidak ditemukan di tabel ${tableName}.`);
       return NextResponse.json({ error: 'Username atau Password salah' }, { status: 401 });
     }
 
     console.log("✅ USER DITEMUKAN:", data.role);
 
-    // 2. LOGIKA RESET BULANAN
+    // 4. LOGIKA RESET BULANAN
     const lastSeenDate = data.last_seen ? new Date(data.last_seen) : new Date(0);
     const today = new Date();
     const isSameMonth = lastSeenDate.getMonth() === today.getMonth() && lastSeenDate.getFullYear() === today.getFullYear();
     let newCount = isSameMonth ? (data.login_count || 0) + 1 : 1;
 
-    // 3. UPDATE STATS (Jika ini error, login tetap harus jalan)
+    // 5. UPDATE STATS (Pastikan updatenya ke tabel yang bener juga)
     try {
-        await supabase.from("users").update({
+        await supabase.from(tableName).update({
             login_count: newCount,
             last_seen: new Date().toISOString()
         }).eq("id", data.id);
-        console.log("📊 Statistik Login Berhasil Diupdate.");
+        console.log(`📊 Statistik Login Berhasil Diupdate di ${tableName}.`);
     } catch (updErr) {
         console.log("⚠️ Gagal Update Statistik (tapi login lanjut):", updErr);
     }
@@ -53,5 +59,5 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  return NextResponse.json({ status: "🚀 JALUR TRACKING SIAP MELUNCUR!" });
+  return NextResponse.json({ status: "🚀 JALUR TRACKING & GATEPASS SIAP MELUNCUR!" });
 }
