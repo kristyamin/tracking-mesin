@@ -21,6 +21,19 @@ export default function KaryawanPage() {
   // State Data Universal
   const [tujuan, setTujuan] = useState(""); 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  useEffect(() => {
+    setTujuan(""); 
+  }, [formType]);
+  // ========================================================
+  // TUKANG SAPU 2.0 (RESET SAAT USER KEMBALI KE STEP 1)
+  // ========================================================
+  useEffect(() => {
+    // Kalau user balik ke halaman awal (Step 1 / Cari NIK)
+    if (step === 1) {
+      setTujuan(""); 
+      setFormType("gatepass"); 
+    }
+  }, [step]); 
 
   // ================= FUNGSI GENERATE NOMOR SURAT OTOMATIS =================
   const generateNomorSurat = async (tipeForm: string) => {
@@ -211,8 +224,6 @@ export default function KaryawanPage() {
               const { data: publicUrlData } = supabase.storage
                 .from('gatepass-images')
                 .getPublicUrl(namaFileUnik);
-
-              // Buang file mentah, simpan nama, jumlah, dan link foto
               return { 
                 namaBarang: item.namaBarang, 
                 jumlah: item.jumlah, 

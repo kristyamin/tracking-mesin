@@ -24,22 +24,66 @@ export default function AdminPage() {
       return;
     }
 
-    setIsAdmin(true); // Langsung kasih masuk!
+    setIsAdmin(true); 
     setIsCheckingAuth(false);
   }, [router]);
 
   const handleLogout = () => {
-    // 1. Hapus ingatan sementara
-    sessionStorage.clear();
+    // 1. Bersihkan semua laci memori sementara
+    sessionStorage.clear(); 
     
-    // 2. INI NAMA TIKET YANG BENAR BEB!
+    // 2. BAKAR SEMUA KEMUNGKINAN NAMA TIKET!
     localStorage.removeItem("role_gatepass"); 
+    localStorage.removeItem("gatepass_role"); 
+    localStorage.removeItem("akses_gatepass"); 
+    localStorage.removeItem("nama_user"); 
     
-    // 3. Kembali ke beranda
-    router.push("/");
+    // 3. TENDANG PAKAI HARD REFRESH! 
+    window.location.href = "/";
   };
 
   const [riwayat, setRiwayat] = useState<any[]>([]);
+  useEffect(() => {
+    if (isAdmin) {
+      fetchDataRiwayat();
+    }
+  }, [isAdmin]);
+
+  const fetchDataRiwayat = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('form_pengajuan')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const formattedData = data.map((d: any) => ({
+          id: d.nomor_surat,
+          type: d.tipe_form,
+          tanggal: d.tanggal,
+          jam: d.jam,
+          bulan: d.bulan,
+          tahun: d.tahun,
+          pemohon: d.pemohon,
+          nik: d.nik,
+          department: d.department,
+          tujuan: d.tujuan,
+          barang: d.barang || [],
+          status: d.status || 'pending',
+          approvedBy: { stefanus: d.acc_stefanus || false, roy: d.acc_roy || false },
+          tanggalIjin: d.tanggal_ijin,
+          jamMulai: d.jam_mulai,
+          jamSelesai: d.jam_selesai,
+          kendaraan: d.kendaraan
+        }));
+        setRiwayat(formattedData);
+      }
+    } catch (err) {
+      console.error("Gagal menarik data admin:", err);
+    }
+  };
 
   const hapusData = async (idHapus: string) => {
   if(confirm(`⚠️ Yakin ingin menghapus data surat jalan ${idHapus}? Data yang dihapus tidak dapat dikembalikan.`)) {
@@ -59,6 +103,17 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterBulan, setFilterBulan] = useState("Semua Bulan");
   const [filterTahun, setFilterTahun] = useState("Semua Tahun");
+  
+  // STATE BARU: Filter Tanggal & Cari Barang
+  const [filterTanggal, setFilterTanggal] = useState("Semua Tanggal");
+  const [searchBarang, setSearchBarang] = useState("");
+
+  // SET DEFAULT TANGGAL HARI INI SAAT PERTAMA DIBUKA
+  useEffect(() => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    setFilterTanggal(dd);
+  }, []);
 
   const [tahunList, setTahunList] = useState<string[]>([]);
   useEffect(() => {
@@ -72,7 +127,8 @@ export default function AdminPage() {
     setTahunList(generatedYears);
   }, []);
 
-  // --- STATE UNTUK CUSTOM DROPDOWN (Hanya Tampil 5 Item & Bisa Scroll) ---
+  // --- STATE UNTUK CUSTOM DROPDOWN
+  const [isTanggalOpen, setIsTanggalOpen] = useState(false);
   const [isBulanOpen, setIsBulanOpen] = useState(false);
   const [isTahunOpen, setIsTahunOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -81,6 +137,7 @@ export default function AdminPage() {
   useEffect(() => {
     const handleClickOutside = (event: any) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsTanggalOpen(false);
         setIsBulanOpen(false);
         setIsTahunOpen(false);
       }
@@ -99,7 +156,7 @@ export default function AdminPage() {
     { label: "Desember", value: "12" },
   ];
 
-  // --- LOGIKA FILTER (TAB + SEARCH + BULAN + TAHUN) ---
+  // --- LOGIKA FILTER (TAB + SEARCH + BULAN + TAHUN + TANGGAL + BARANG) ---
   const filteredData = riwayat.filter(item => {
     const matchTab = item.type === activeTab;
     const matchSearch = item.pemohon.toLowerCase().includes(searchQuery.toLowerCase()) || item.nik.includes(searchQuery);
@@ -109,7 +166,19 @@ export default function AdminPage() {
     const matchBulan = filterBulan === "Semua Bulan" ? true : item.bulan === selectedBulanValue;
     const matchTahun = filterTahun === "Semua Tahun" ? true : item.tahun === filterTahun;
     
-    return matchTab && matchSearch && matchBulan && matchTahun;
+    // Filter Tanggal (Ambil 2 angka pertama dari tanggal, misal "18" dari "18 Mei 2026")
+    const itemDay = item.tanggal ? item.tanggal.split(" ")[0].padStart(2, '0') : "";
+    const matchTanggal = filterTanggal === "Semua Tanggal" ? true : itemDay === filterTanggal;
+
+    // Filter Barang Khusus Tab Gatepass
+    let matchBarang = true;
+    if (activeTab === "gatepass" && searchBarang.trim() !== "") {
+      // Ubah data array barang jadi teks biasa biar gampang dicari
+      const dataBarangStr = JSON.stringify(item.barang || []).toLowerCase();
+      matchBarang = dataBarangStr.includes(searchBarang.toLowerCase());
+    }
+    
+    return matchTab && matchSearch && matchBulan && matchTahun && matchTanggal && matchBarang;
   });
 
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -139,94 +208,108 @@ export default function AdminPage() {
         <div className="bg-white w-[210mm] h-max p-12 shadow-2xl print:shadow-none text-black relative">
           
           {printDocument.type === 'gatepass' ? (
-            /* --- LAYOUT 1: KERTAS GATE PASS (Asli Dari Kodemu) --- */
+            /* --- LAYOUT 1: KERTAS GATE PASS FULL WATERMARK --- */
             <>
-              <div className="border-b-4 border-slate-800 pb-4 mb-8 flex justify-between items-end">
-                <div>
-                  <h1 className="text-3xl font-black tracking-tighter text-blue-900">PT. DJITOE MESINDO</h1>
-                  <p className="text-sm font-medium mt-1">Sistem Manajemen Keluar Barang</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold border border-slate-400 p-2 uppercase">Gate Pass</p>
-                  <p className="font-bold mt-2">{printDocument.id}</p>
-                </div>
-              </div>
+              
+              {/* ================= WATERMARK LOGO FULL MENTOK KERTAS ================= */}
+              {/* Pakai absolute top-0 left-0 w-full h-full biar nabrak batas pinggir */}
+              <div 
+                className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-[0.05]" 
+                style={{ 
+                  backgroundImage: 'url("/logo.png")', 
+                  backgroundRepeat: 'repeat', 
+                  backgroundSize: '150px' 
+                }}
+              ></div>
+              {/* ========================================================= */}
 
-              <div className="grid grid-cols-2 gap-8 mb-8">
-                <div>
-                  <p className="text-sm text-gray-500 uppercase font-bold">Informasi Pemohon</p>
-                  <p className="font-bold text-lg mt-1">{printDocument.pemohon}</p>
-                  <p className="text-sm">NIK: {printDocument.nik}</p>
+              {/* WRAPPER KONTEN BIAR TEKSNYA DI ATAS WATERMARK */}
+              <div className="relative z-10 pb-4">
+                <div className="border-b-4 border-slate-800 pb-4 mb-8 flex justify-between items-end">
+                  <div>
+                    <h1 className="text-3xl font-black tracking-tighter text-blue-900">PT. DJITOE MESINDO</h1>
+                    <p className="text-sm font-medium mt-1">Sistem Manajemen Keluar Barang</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold border border-slate-400 p-2 uppercase">Gate Pass</p>
+                    <p className="font-bold mt-2">{printDocument.id}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500 uppercase font-bold">Waktu Pengajuan</p>
-                  <p className="font-bold text-lg mt-1">{printDocument.tanggal}</p>
+
+                <div className="grid grid-cols-2 gap-8 mb-8">
+                  <div>
+                    <p className="text-sm text-gray-500 uppercase font-bold">Informasi Pemohon</p>
+                    <p className="font-bold text-lg mt-1">{printDocument.pemohon}</p>
+                    <p className="text-sm">NIK: {printDocument.nik}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 uppercase font-bold">Waktu Pengajuan</p>
+                    <p className="font-bold text-lg mt-1">{printDocument.tanggal}</p>
+                  </div>
                 </div>
-              </div>
 
-              <p className="text-sm text-gray-500 uppercase font-bold mb-2">Tujuan / Alasan Bawa Barang</p>
-              <div className="p-4 border border-gray-300 bg-gray-50 mb-8">
-                <p className="font-medium">"{printDocument.tujuan}"</p>
-              </div>
+                <p className="text-sm text-gray-500 uppercase font-bold mb-2">Tujuan / Alasan Bawa Barang</p>
+                <div className="p-4 border border-gray-300 bg-white/60 backdrop-blur-sm mb-8 relative z-10 shadow-sm">
+                  <p className="font-medium">"{printDocument.tujuan}"</p>
+                </div>
 
-              <p className="text-sm text-gray-500 uppercase font-bold mb-2">Rincian Barang</p>
-              <table className="w-full border-collapse border border-gray-400 mb-12">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-400 p-2 text-center w-12">No</th>
-                    <th className="border border-gray-400 p-2 text-left">Nama Barang</th>
-                    <th className="border border-gray-400 p-2 text-center w-32">Jumlah</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {printDocument.barang.map((b: any, index: number) => (
-                    <tr key={index}>
-                      <td className="border border-gray-400 p-2 text-center">{index + 1}</td>
-                      <td className="border border-gray-400 p-2 font-medium">{b.namaBarang}</td>
-                      <td className="border border-gray-400 p-2 text-center font-bold">{b.jumlah}</td>
+                <p className="text-sm text-gray-500 uppercase font-bold mb-2">Rincian Barang</p>
+                
+                {/* BACKGROUND TABEL DIBIKIN TRANSPARAN BIAR LOGO TEMBUS */}
+                <table className="w-full border-collapse border border-gray-400 mb-12 bg-white/70 backdrop-blur-sm shadow-sm">
+                  <thead>
+                    <tr className="bg-gray-100/80">
+                      <th className="border border-gray-400 p-2 text-center w-12">No</th>
+                      <th className="border border-gray-400 p-2 text-left">Nama Barang</th>
+                      <th className="border border-gray-400 p-2 text-center w-32">Jumlah</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {printDocument.barang.map((b: any, index: number) => (
+                      <tr key={index}>
+                        <td className="border border-gray-400 p-2 text-center">{index + 1}</td>
+                        <td className="border border-gray-400 p-2 font-medium">{b.namaBarang}</td>
+                        <td className="border border-gray-400 p-2 text-center font-bold">{b.jumlah}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
 
-              <div className="flex justify-between items-end mt-20">
-                <div className="text-center">
-                  <div className="w-36 h-36 border-2 border-dashed border-gray-400 flex items-center justify-center p-2 mb-2 bg-white">
-                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sistem-djitoe.com/security?surat=${printDocument.id}`} alt="QR Code Security" className="w-full h-full object-contain" />
-                  </div>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase">Scan Security</p>
-                </div>
-                
-                <div className="flex gap-12">
+                <div className="flex justify-between items-end mt-20">
                   <div className="text-center">
-                    <p className="text-sm mb-16">Disetujui Oleh,</p>
-                    <div className="relative">
-                      {printDocument.approvedBy.stefanus && <img src="/TTD om stev 2.png" className="absolute -top-24 left-1/2 -translate-x-1/2 w-[250px] max-w-none contrast-200 brightness-75" alt="TTD Stefanus" />}
+                    <div className="w-36 h-36 border-2 border-dashed border-gray-400 flex items-center justify-center p-2 mb-2 bg-white relative z-10">
+                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sistem-djitoe.com/security?surat=${printDocument.id}`} alt="QR Code Security" className="w-full h-full object-contain" />
                     </div>
-                    <p className="font-bold underline">Stefanus</p>
-                    <p className="text-[10px] text-gray-500">Digitally Signed</p>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase bg-white/50 px-2 rounded-full inline-block mt-1">Scan Security</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm mb-16">Mengetahui,</p>
-                    <div className="relative">
-                      {printDocument.approvedBy.roy && <img src="/TTD Roy.png" className="absolute -top-17 left-1/2 -translate-x-1/2 w-[130px] max-w-none contrast-200 brightness-80" alt="TTD Roy" />}
+                  
+                  <div className="flex gap-12">
+                    <div className="text-center">
+                      <p className="text-sm mb-16 bg-white/50 px-2 rounded-full inline-block">Disetujui Oleh,</p>
+                      <div className="relative">
+                        {printDocument.approvedBy.stefanus && <img src="/TTD om stev 2.png" className="absolute -top-24 left-1/2 -translate-x-1/2 w-[250px] max-w-none contrast-200 brightness-75 z-20" alt="TTD Stefanus" />}
+                      </div>
+                      <p className="font-bold underline relative z-10">Stefanus</p>
+                      <p className="text-[10px] text-gray-500 relative z-10 bg-white/50 px-2 rounded-full inline-block mt-1">Digitally Signed</p>
                     </div>
-                    <p className="font-bold underline">Roy</p>
-                    <p className="text-[10px] text-gray-500">Digitally Signed</p>
+                    <div className="text-center">
+                      <p className="text-sm mb-16 bg-white/50 px-2 rounded-full inline-block">Mengetahui,</p>
+                      <div className="relative">
+                        {printDocument.approvedBy.roy && <img src="/TTD Roy.png" className="absolute -top-17 left-1/2 -translate-x-1/2 w-[130px] max-w-none contrast-200 brightness-80 z-20" alt="TTD Roy" />}
+                      </div>
+                      <p className="font-bold underline relative z-10">Roy</p>
+                      <p className="text-[10px] text-gray-500 relative z-10 bg-white/50 px-2 rounded-full inline-block mt-1">Digitally Signed</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* --- FOOTER GATEPASS (DI ATAS GARIS GUNTING) --- */}
-              <div className="mt-20 relative z-10 flex flex-col items-center">
-                {/* Teks Sah (Pindah ke Atas) */}
-                <p className="text-[10px] text-gray-400 mb-2 font-sans uppercase tracking-widest text-center">
-                  Dokumen ini dicetak secara sah oleh sistem PT. Djitoe Mesindo pada {new Date().toLocaleDateString('id-ID')}
-                </p>
-                
-                {/* Garis Gunting (Pindah ke Bawah Teks) */}
-                <div className="w-full border-t-2 border-dashed border-gray-300 relative flex justify-center">
-                  <span className="absolute -top-4 bg-white px-2 text-lg print:hidden">✂️</span>
+                {/* --- FOOTER GATEPASS --- */}
+                <div className="mt-20 relative z-10 flex flex-col items-center">
+                  <p className="text-[10px] text-gray-400 mb-2 font-sans uppercase tracking-widest text-center bg-white/80 backdrop-blur-sm px-4 py-1 rounded-full shadow-sm">
+                    Dokumen ini dicetak secara sah oleh sistem PT. Djitoe Mesindo pada {new Date().toLocaleDateString('id-ID')}
+                  </p>
+                  <div className="w-full border-t-2 border-dashed border-gray-300 relative flex justify-center mt-2">
+                  </div>
                 </div>
               </div>
             </>
@@ -350,29 +433,80 @@ export default function AdminPage() {
           <button onClick={() => setActiveTab('ket_hadir')} className={`px-5 py-3 rounded-t-xl font-bold transition border-b-4 ${activeTab === 'ket_hadir' ? 'bg-rose-100 text-rose-800 border-rose-500' : 'bg-white text-gray-400 border-transparent hover:bg-gray-50'}`}>📝 Ket. Hadir</button>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between" ref={dropdownRef}>
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-col lg:flex-row gap-4 items-center justify-between" ref={dropdownRef}>
           
-          <div className="relative w-full md:w-1/3">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          {/* KIRI: KOLOM PENCARIAN (NAMA & BARANG) */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-1/2">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              </div>
+              <input 
+                type="text" 
+                placeholder="Cari Nama / NIK..." 
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 font-medium text-black outline-none"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <input 
-              type="text" 
-              placeholder="Cari Nama / NIK Pemohon..." 
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 font-medium text-black"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+
+            {/* MUNCUL KHUSUS TAB GATEPASS (Untuk Cari Nama Barang) */}
+            {activeTab === 'gatepass' && (
+              <div className="relative flex-1 animate-in fade-in zoom-in duration-300">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-blue-500">
+                  📦
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Lacak Nama Barang..." 
+                  className="w-full pl-10 pr-4 py-2 border border-blue-200 bg-blue-50/50 rounded-xl focus:ring-2 focus:ring-blue-500 font-medium text-black outline-none placeholder-blue-400"
+                  value={searchBarang}
+                  onChange={(e) => setSearchBarang(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
-          {/* --- CUSTOM DROPDOWN (MAX 5 ITEM SCROLL) --- */}
-          <div className="flex gap-3 w-full md:w-auto relative">
+          {/* KANAN: FILTER TANGGAL, BULAN, TAHUN */}
+          <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full lg:w-auto relative justify-end">
             
-            {/* Filter Bulan */}
-            <div className="relative w-1/2 md:w-44">
+            {/* Filter Tanggal (Custom Dropdown) */}
+            <div className="relative w-full sm:w-36">
               <button 
-                onClick={() => {setIsBulanOpen(!isBulanOpen); setIsTahunOpen(false);}} 
-                className="w-full border border-slate-300 py-2 px-4 rounded-xl font-medium text-slate-700 bg-slate-50 flex justify-between items-center outline-none focus:ring-2 focus:ring-blue-500"
+                onClick={() => {setIsTanggalOpen(!isTanggalOpen); setIsBulanOpen(false); setIsTahunOpen(false);}} 
+                className="w-full border border-slate-300 py-2 px-4 rounded-xl font-medium text-slate-700 bg-slate-50 flex justify-between items-center outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+              >
+                {filterTanggal === "Semua Tanggal" ? "Semua Tgl" : filterTanggal} <span className="text-[10px]">▼</span>
+              </button>
+              {isTanggalOpen && (
+                <ul className="absolute left-0 right-0 mt-2 bg-white border border-slate-300 rounded-xl shadow-xl z-50 max-h-52 overflow-y-auto">
+                  <li 
+                    onClick={() => {setFilterTanggal("Semua Tanggal"); setIsTanggalOpen(false);}}
+                    className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-slate-700 font-medium border-b border-slate-100"
+                  >
+                    Semua Tgl
+                  </li>
+                  {Array.from({ length: 31 }, (_, i) => {
+                    const num = String(i + 1).padStart(2, '0');
+                    return (
+                      <li 
+                        key={num} 
+                        onClick={() => {setFilterTanggal(num); setIsTanggalOpen(false);}}
+                        className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-slate-700 font-medium border-b border-slate-100 last:border-0"
+                      >
+                        {num}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
+            {/* Filter Bulan (Custom Dropdown) */}
+            <div className="relative w-full sm:w-40">
+              <button 
+                onClick={() => {setIsBulanOpen(!isBulanOpen); setIsTanggalOpen(false); setIsTahunOpen(false);}} 
+                className="w-full border border-slate-300 py-2 px-4 rounded-xl font-medium text-slate-700 bg-slate-50 flex justify-between items-center outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
               >
                 {filterBulan} <span className="text-[10px]">▼</span>
               </button>
@@ -391,11 +525,11 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* Filter Tahun */}
-            <div className="relative w-1/2 md:w-44">
+            {/* Filter Tahun (Custom Dropdown) */}
+            <div className="relative w-full sm:w-36">
               <button 
-                onClick={() => {setIsTahunOpen(!isTahunOpen); setIsBulanOpen(false);}} 
-                className="w-full border border-slate-300 py-2 px-4 rounded-xl font-medium text-slate-700 bg-slate-50 flex justify-between items-center outline-none focus:ring-2 focus:ring-blue-500"
+                onClick={() => {setIsTahunOpen(!isTahunOpen); setIsTanggalOpen(false); setIsBulanOpen(false);}} 
+                className="w-full border border-slate-300 py-2 px-4 rounded-xl font-medium text-slate-700 bg-slate-50 flex justify-between items-center outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
               >
                 {filterTahun} <span className="text-[10px]">▼</span>
               </button>
@@ -426,10 +560,6 @@ export default function AdminPage() {
              </div>
           ) : (
             filteredData.map((item) => {
-              
-              // LOGIKA KESIAPAN CETAK: 
-              // Gatepass = Butuh TTD Stefanus DAN Roy
-              // HRD = Butuh TTD Stefanus ATAU Roy
               const fullyApproved = item.type === 'gatepass' 
                 ? (item.approvedBy.stefanus && item.approvedBy.roy) 
                 : (item.approvedBy.stefanus || item.approvedBy.roy);

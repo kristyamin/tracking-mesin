@@ -123,12 +123,37 @@ export default function ManajerPage() {
     if (!isConfirmed) return;
 
     try {
-      // Tentukan siapa yang ngeklik, kolom Supabase mana yang diisi
+      // 1. Tarik data surat yang lagi diklik
+      const itemData = pengajuan.find(p => p.id === id);
+      if (!itemData) return;
+
+      // 2. Tentukan siapa yang ngeklik, kolom Supabase mana yang diisi
       const kolomAcc = currentUser === 'stefanus' ? 'acc_stefanus' : 'acc_roy';
       
-      const { error } = await supabase.from('form_pengajuan').update({
-         [kolomAcc]: true
-      }).eq('nomor_surat', id);
+      // 3. Siapkan keranjang data yang mau di-update ke database
+      let dataUpdate: any = { 
+        [kolomAcc]: true 
+      };
+
+      // ========================================================
+      // LOGIKA PINTAR PENENTU STATUS (BIAR MUNCUL DI ADMIN)
+      // ========================================================
+      if (itemData.type !== 'gatepass') {
+        // A. Kalau Ijin HRD (Setengah Hari dll), 1 TTD udah cukup! Langsung Approved!
+        dataUpdate.status = 'approved';
+      } else {
+        // B. Kalau Gatepass, cek dulu Manajer SATUNYA udah TTD belum?
+        const manajerSatunyaUdahTTD = currentUser === 'stefanus' ? itemData.approvedBy.roy : itemData.approvedBy.stefanus;
+        
+        if (manajerSatunyaUdahTTD) {
+          // Kalau manajer satunya udah TTD, berarti ini TTD Terakhir. Gas Approved!
+          dataUpdate.status = 'approved';
+        }
+        // Kalau belum, statusnya biarin aja (gak diubah ke approved dulu)
+      }
+
+      // 4. Tembak update-an ke Supabase!
+      const { error } = await supabase.from('form_pengajuan').update(dataUpdate).eq('nomor_surat', id);
 
       if (error) throw error;
 
