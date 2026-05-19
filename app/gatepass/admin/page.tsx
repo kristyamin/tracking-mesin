@@ -86,19 +86,35 @@ export default function AdminPage() {
   };
 
   const hapusData = async (idHapus: string) => {
-  if(confirm(`⚠️ Yakin ingin menghapus data surat jalan ${idHapus}? Data yang dihapus tidak dapat dikembalikan.`)) {
-    try {
-      // Hapus dari Supabase
-      await supabase.from('form_pengajuan').delete().eq('id', idHapus);
+    if(confirm(`⚠️ Yakin ingin menghapus data surat jalan ${idHapus}? Data dan FOTO akan hangus permanen selamanya.`)) {
+      try {
+      
+        const itemTarget = riwayat.find(item => item.id === idHapus);
+        if (itemTarget && itemTarget.type === 'gatepass' && itemTarget.barang && itemTarget.barang.length > 0) {
+          const filePaths = itemTarget.barang.map((b: any) => {
+            const urlParts = b.foto.split('/');
+            return urlParts[urlParts.length - 1]; 
+          });
 
-      // Hapus dari layar
-      setRiwayat(riwayat.filter(item => item.id !== idHapus));
-      alert("Data berhasil dihapus!");
-    } catch (err) {
-      alert("Gagal menghapus data dari server.");
+          // EKSEKUSI HAPUS FOTO DARI BUCKET 'foto_barang'
+          const { error: storageError } = await supabase.storage.from('foto_barang').remove(filePaths);
+          if (storageError) console.error("Gagal hanguskan foto:", storageError);
+        }
+
+        // 3. HANGUSKAN DATA TEKS DARI TABEL (Pakai 'nomor_surat' sesuai databasemu)
+        const { error: dbError } = await supabase.from('form_pengajuan').delete().eq('nomor_surat', idHapus);
+        if (dbError) throw dbError;
+
+        // 4. HILANGKAN DARI LAYAR ADMIN
+        setRiwayat(riwayat.filter(item => item.id !== idHapus));
+        alert("✅ Bersih total! Data dan Foto berhasil dihanguskan dari Supabase!");
+        
+      } catch (err) {
+        console.error(err);
+        alert("❌ Gagal menghapus data dari server.");
+      }
     }
-  }
-};
+  };
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterBulan, setFilterBulan] = useState("Semua Bulan");
@@ -190,12 +206,20 @@ export default function AdminPage() {
 
   if (isCheckingAuth) return <div className="min-h-screen bg-slate-50 flex items-center justify-center">Memuat...</div>;
 
-  // =========================================================================
-  // HALAMAN KERTAS PRINT PDF (2 LAYOUT DINAMIS)
-  // =========================================================================
+  
+  // HALAMAN KERTAS PRINT PDF
   if (printDocument) {
     return (
-      <div className="min-h-screen bg-gray-200 flex flex-col items-center py-10 print:py-0 print:bg-white">
+      <div className="min-h-screen bg-gray-200 flex flex-col items-center py-10 print:py-0 print:bg-white relative">
+        
+        {/* CSS SAKTI UNTUK MENGHILANGKAN URL BROWSER SAAT DI-PRINT */}
+        <style dangerouslySetInnerHTML={{__html: `
+          @media print {
+            @page { margin: 0; } 
+            body { padding: 1cm; } 
+          }
+        `}} />
+
         <div className="mb-6 flex gap-4 print:hidden">
           <button onClick={() => setPrintDocument(null)} className="bg-slate-700 text-white px-6 py-2 rounded-lg font-bold shadow-lg hover:bg-slate-800 active:scale-95 transition">⬅ Kembali</button>
           <button onClick={eksekusiCetak} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition flex items-center gap-2">
@@ -204,15 +228,13 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* --- PERUBAHAN: min-h diganti h-max agar kertasnya fleksibel mengikuti isi --- */}
-        <div className="bg-white w-[210mm] h-max p-12 shadow-2xl print:shadow-none text-black relative">
+        {/* Wrapper Kertas */}
+        <div className="bg-white w-[210mm] h-max p-12 print:p-8 shadow-2xl print:shadow-none text-black relative">
           
           {printDocument.type === 'gatepass' ? (
-            /* --- LAYOUT 1: KERTAS GATE PASS FULL WATERMARK --- */
+            /* --- LAYOUT 1: KERTAS GATE PASS (COMPACT MODE) --- */
             <>
-              
-              {/* ================= WATERMARK LOGO FULL MENTOK KERTAS ================= */}
-              {/* Pakai absolute top-0 left-0 w-full h-full biar nabrak batas pinggir */}
+              {/* ================= WATERMARK LOGO FULL ================= */}
               <div 
                 className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-[0.05]" 
                 style={{ 
@@ -223,89 +245,91 @@ export default function AdminPage() {
               ></div>
               {/* ========================================================= */}
 
-              {/* WRAPPER KONTEN BIAR TEKSNYA DI ATAS WATERMARK */}
               <div className="relative z-10 pb-4">
-                <div className="border-b-4 border-slate-800 pb-4 mb-8 flex justify-between items-end">
+                {/* Header ditarik lebih rapat */}
+                <div className="border-b-4 border-slate-800 pb-3 mb-5 flex justify-between items-end">
                   <div>
                     <h1 className="text-3xl font-black tracking-tighter text-blue-900">PT. DJITOE MESINDO</h1>
                     <p className="text-sm font-medium mt-1">Sistem Manajemen Keluar Barang</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold border border-slate-400 p-2 uppercase">Gate Pass</p>
-                    <p className="font-bold mt-2">{printDocument.id}</p>
+                    <p className="text-xl font-bold border border-slate-400 p-1.5 uppercase">Gate Pass</p>
+                    <p className="font-bold mt-1.5 text-sm">{printDocument.id}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8 mb-8">
+                {/* Grid Info Pemohon dirapatkan */}
+                <div className="grid grid-cols-2 gap-8 mb-5">
                   <div>
-                    <p className="text-sm text-gray-500 uppercase font-bold">Informasi Pemohon</p>
-                    <p className="font-bold text-lg mt-1">{printDocument.pemohon}</p>
-                    <p className="text-sm">NIK: {printDocument.nik}</p>
+                    <p className="text-xs text-gray-500 uppercase font-bold">Informasi Pemohon</p>
+                    <p className="font-bold text-base mt-1">{printDocument.pemohon}</p>
+                    <p className="text-xs mt-0.5">NIK: {printDocument.nik}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 uppercase font-bold">Waktu Pengajuan</p>
-                    <p className="font-bold text-lg mt-1">{printDocument.tanggal}</p>
+                    <p className="text-xs text-gray-500 uppercase font-bold">Waktu Pengajuan</p>
+                    <p className="font-bold text-base mt-1">{printDocument.tanggal}</p>
                   </div>
                 </div>
 
-                <p className="text-sm text-gray-500 uppercase font-bold mb-2">Tujuan / Alasan Bawa Barang</p>
-                <div className="p-4 border border-gray-300 bg-white/60 backdrop-blur-sm mb-8 relative z-10 shadow-sm">
-                  <p className="font-medium">"{printDocument.tujuan}"</p>
+                <p className="text-xs text-gray-500 uppercase font-bold mb-1.5">Tujuan / Alasan Bawa Barang</p>
+                {/* Kotak Tujuan dikecilkan padding-nya */}
+                <div className="p-2.5 border border-gray-300 bg-white/60 backdrop-blur-sm mb-5 relative z-10 shadow-sm">
+                  <p className="font-medium text-sm">"{printDocument.tujuan}"</p>
                 </div>
 
-                <p className="text-sm text-gray-500 uppercase font-bold mb-2">Rincian Barang</p>
-                
-                {/* BACKGROUND TABEL DIBIKIN TRANSPARAN BIAR LOGO TEMBUS */}
-                <table className="w-full border-collapse border border-gray-400 mb-12 bg-white/70 backdrop-blur-sm shadow-sm">
+                <p className="text-xs text-gray-500 uppercase font-bold mb-1.5">Rincian Barang</p>
+                <table className="w-full border-collapse border border-gray-400 mb-6 bg-white/70 backdrop-blur-sm shadow-sm text-sm">
                   <thead>
                     <tr className="bg-gray-100/80">
-                      <th className="border border-gray-400 p-2 text-center w-12">No</th>
-                      <th className="border border-gray-400 p-2 text-left">Nama Barang</th>
-                      <th className="border border-gray-400 p-2 text-center w-32">Jumlah</th>
+                      <th className="border border-gray-400 p-1.5 text-center w-10">No</th>
+                      <th className="border border-gray-400 p-1.5 text-left">Nama Barang</th>
+                      <th className="border border-gray-400 p-1.5 text-center w-24">Jumlah</th>
                     </tr>
                   </thead>
                   <tbody>
                     {printDocument.barang.map((b: any, index: number) => (
                       <tr key={index}>
-                        <td className="border border-gray-400 p-2 text-center">{index + 1}</td>
-                        <td className="border border-gray-400 p-2 font-medium">{b.namaBarang}</td>
-                        <td className="border border-gray-400 p-2 text-center font-bold">{b.jumlah}</td>
+                        <td className="border border-gray-400 p-1.5 text-center">{index + 1}</td>
+                        <td className="border border-gray-400 p-1.5 font-medium">{b.namaBarang}</td>
+                        <td className="border border-gray-400 p-1.5 text-center font-bold">{b.jumlah}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                <div className="flex justify-between items-end mt-20">
+                {/* Bagian Bawah ditarik naik drastis */}
+                <div className="flex justify-between items-end mt-8">
                   <div className="text-center">
-                    <div className="w-36 h-36 border-2 border-dashed border-gray-400 flex items-center justify-center p-2 mb-2 bg-white relative z-10">
+                    {/* QR Code dikecilkan (w-28) */}
+                    <div className="w-28 h-28 border-2 border-dashed border-gray-400 flex items-center justify-center p-1.5 mb-1.5 bg-white relative z-10">
                       <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://tracking-mesin.vercel.app/gatepass/security?surat=${printDocument.id}`} alt="QR Code Security" className="w-full h-full object-contain" />
                     </div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase bg-white/50 px-2 rounded-full inline-block mt-1">Scan Security</p>
+                    <p className="text-[9px] text-gray-500 font-bold uppercase bg-white/50 px-2 rounded-full inline-block">Scan Security</p>
                   </div>
                   
-                  <div className="flex gap-12">
+                  <div className="flex gap-10">
                     <div className="text-center">
-                      <p className="text-sm mb-16 bg-white/50 px-2 rounded-full inline-block">Disetujui Oleh,</p>
+                      <p className="text-xs mb-10 bg-white/50 px-2 rounded-full inline-block">Disetujui Oleh,</p>
                       <div className="relative">
-                        {printDocument.approvedBy.stefanus && <img src="/TTD om stev 2.png" className="absolute -top-24 left-1/2 -translate-x-1/2 w-[250px] max-w-none contrast-200 brightness-75 z-20" alt="TTD Stefanus" />}
+                        {printDocument.approvedBy.stefanus && <img src="/TTD om stev 2.png" className="absolute -top-20 left-1/2 -translate-x-1/2 w-[200px] max-w-none contrast-200 brightness-75 z-20" alt="TTD Stefanus" />}
                       </div>
-                      <p className="font-bold underline relative z-10">Stefanus</p>
-                      <p className="text-[10px] text-gray-500 relative z-10 bg-white/50 px-2 rounded-full inline-block mt-1">Digitally Signed</p>
+                      <p className="font-bold underline relative z-10 text-sm">Stefanus</p>
+                      <p className="text-[9px] text-gray-500 relative z-10 bg-white/50 px-2 rounded-full inline-block mt-0.5">Digitally Signed</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm mb-16 bg-white/50 px-2 rounded-full inline-block">Mengetahui,</p>
+                      <p className="text-xs mb-10 bg-white/50 px-2 rounded-full inline-block">Mengetahui,</p>
                       <div className="relative">
-                        {printDocument.approvedBy.roy && <img src="/TTD Roy.png" className="absolute -top-17 left-1/2 -translate-x-1/2 w-[130px] max-w-none contrast-200 brightness-80 z-20" alt="TTD Roy" />}
+                        {printDocument.approvedBy.roy && <img src="/TTD Roy.png" className="absolute -top-14 left-1/2 -translate-x-1/2 w-[110px] max-w-none contrast-200 brightness-80 z-20" alt="TTD Roy" />}
                       </div>
-                      <p className="font-bold underline relative z-10">Roy</p>
-                      <p className="text-[10px] text-gray-500 relative z-10 bg-white/50 px-2 rounded-full inline-block mt-1">Digitally Signed</p>
+                      <p className="font-bold underline relative z-10 text-sm">Roy</p>
+                      <p className="text-[9px] text-gray-500 relative z-10 bg-white/50 px-2 rounded-full inline-block mt-0.5">Digitally Signed</p>
                     </div>
                   </div>
                 </div>
 
                 {/* --- FOOTER GATEPASS --- */}
-                <div className="mt-20 relative z-10 flex flex-col items-center">
-                  <p className="text-[10px] text-gray-400 mb-2 font-sans uppercase tracking-widest text-center bg-white/80 backdrop-blur-sm px-4 py-1 rounded-full shadow-sm">
+                <div className="mt-10 relative z-10 flex flex-col items-center">
+                  <p className="text-[9px] text-gray-400 mb-1 font-sans uppercase tracking-widest text-center bg-white/80 backdrop-blur-sm px-4 py-1 rounded-full shadow-sm">
                     Dokumen ini dicetak secara sah oleh sistem PT. Djitoe Mesindo pada {new Date().toLocaleDateString('id-ID')}
                   </p>
                   <div className="w-full border-t-2 border-dashed border-gray-300 relative flex justify-center mt-2">
