@@ -278,7 +278,7 @@ export default function AdminPage() {
                 <div className="flex justify-between items-end mt-20">
                   <div className="text-center">
                     <div className="w-36 h-36 border-2 border-dashed border-gray-400 flex items-center justify-center p-2 mb-2 bg-white relative z-10">
-                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sistem-djitoe.com/security?surat=${printDocument.id}`} alt="QR Code Security" className="w-full h-full object-contain" />
+                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://tracking-mesin.vercel.app/gatepass/security?surat=${printDocument.id}`} alt="QR Code Security" className="w-full h-full object-contain" />
                     </div>
                     <p className="text-[10px] text-gray-500 font-bold uppercase bg-white/50 px-2 rounded-full inline-block mt-1">Scan Security</p>
                   </div>
