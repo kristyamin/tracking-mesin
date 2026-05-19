@@ -573,7 +573,11 @@ export default function AdminPage() {
                         <p className="text-xs text-slate-500 font-medium mt-2">{item.tanggal}</p>
                       </div>
                       
-                      {item.status === 'rejected' ? (
+                      {item.status === 'ditahan' ? (
+                        <span className="bg-red-100 text-red-700 text-xs font-black px-3 py-1 rounded-full border border-red-300 animate-pulse shadow-sm">🛑 DITAHAN SATPAM</span>
+                      ) : item.status === 'keluar' ? (
+                        <span className="bg-slate-200 text-slate-600 text-xs font-bold px-3 py-1 rounded-full">🏁 Telah Keluar</span>
+                      ) : item.status === 'rejected' ? (
                         <span className="bg-red-100 text-red-700 text-xs font-bold px-3 py-1 rounded-full">❌ Ditolak</span>
                       ) : fullyApproved ? (
                         <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full">✅ Siap Cetak</span>

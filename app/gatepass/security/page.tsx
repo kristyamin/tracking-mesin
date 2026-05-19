@@ -91,8 +91,8 @@ export default function SecurityPage() {
       const { data, error } = await supabase
         .from('form_pengajuan')
         .select('*')
-        .eq('status', 'keluar') // Hanya ambil yang sudah lewat gerbang
-        .eq('tanggal', today)   // Hanya hari ini
+        .in('status', ['keluar', 'ditahan']) // Tampilkan yang lolos DAN yang ditahan hari ini!
+        .eq('tanggal', today)   
         .order('waktu_keluar', { ascending: false });
 
       if (data) setRiwayat(data);
@@ -112,7 +112,6 @@ export default function SecurityPage() {
     localStorage.setItem("nama_security", inputName.toUpperCase());
     setSecurityName(inputName.toUpperCase());
 
-    // Kalau ada antrian scan, langsung proses setelah login
     if (scannedSuratId) fetchDokumenScan(scannedSuratId);
   };
 
@@ -124,12 +123,11 @@ export default function SecurityPage() {
     }
   };
 
+  // AKSI 1: LOLOSKAN BARANG
   const handleIzinkanKeluar = async (id: string) => {
     if(confirm("Validasi fisik barang sesuai dengan foto? Izinkan keluar?")) {
       const jamKeluar = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB";
-      
       try {
-        // Tembak data ke Supabase!
         const { error } = await supabase.from('form_pengajuan').update({
           status: 'keluar',
           waktu_keluar: jamKeluar,
@@ -139,8 +137,6 @@ export default function SecurityPage() {
         if (error) throw error;
 
         alert(`✅ Gate Pass ${id} BERHASIL DITUTUP!\n\nBarang diizinkan keluar pada ${jamKeluar} oleh Petugas: ${securityName}.`);
-        
-        // Hapus URL Scan agar kembali ke dashboard bersih
         router.replace('/gatepass/security');
         setScannedSuratId(null);
         setDokumenScan(null);
@@ -150,11 +146,27 @@ export default function SecurityPage() {
     }
   };
 
-  const handleTahan = () => {
-    alert("❌ BARANG DITAHAN! Silakan arahkan karyawan kembali ke Admin.");
-    router.replace('/gatepass/security');
-    setScannedSuratId(null);
-    setDokumenScan(null);
+  // AKSI 2: TAHAN BARANG (Update database juga!)
+  const handleTahan = async (id: string) => {
+    if(confirm("❌ Yakin menahan barang ini? Pemohon harus kembali ke Admin!")) {
+      const jamTahan = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB";
+      try {
+        const { error } = await supabase.from('form_pengajuan').update({
+          status: 'ditahan',
+          waktu_keluar: jamTahan,
+          petugas_security: securityName
+        }).eq('nomor_surat', id);
+
+        if (error) throw error;
+
+        alert(`🛑 BARANG DITAHAN!\n\nStatus telah diupdate. Pemohon harus lapor Admin.`);
+        router.replace('/gatepass/security');
+        setScannedSuratId(null);
+        setDokumenScan(null);
+      } catch (err) {
+        alert("❌ Gagal mengupdate data ke server. Pastikan sinyal internet stabil.");
+      }
+    }
   };
 
   const [zoomedFoto, setZoomedFoto] = useState<{foto: string, nama: string} | null>(null);
@@ -192,7 +204,6 @@ export default function SecurityPage() {
             Mulai Shift Jaga 🛡️
           </button>
           
-          {/* Tampilkan pesan kalau dia belum login tapi mau scan kertas */}
           {scannedSuratId && <p className="text-yellow-500 text-xs text-center mt-4 bg-yellow-900/30 p-2 rounded-lg font-bold">⚠️ Anda harus login shift dulu sebelum memindai QR Code ini.</p>}
 
           <div className="mt-6 text-center">
@@ -219,10 +230,12 @@ export default function SecurityPage() {
         ) : dokumenScan ? (
           <div className="w-full max-w-lg bg-white rounded-3xl overflow-hidden shadow-2xl">
             {/* Header Status */}
-            <div className={`p-6 text-center border-b-4 ${dokumenScan.status === 'keluar' ? 'bg-slate-100 border-slate-300' : 'bg-yellow-50 border-yellow-400'}`}>
+            <div className={`p-6 text-center border-b-4 ${dokumenScan.status === 'keluar' ? 'bg-slate-100 border-slate-300' : dokumenScan.status === 'ditahan' ? 'bg-red-50 border-red-500' : 'bg-yellow-50 border-yellow-400'}`}>
               <h2 className="text-2xl font-black text-slate-800 tracking-tighter">{dokumenScan.nomor_surat}</h2>
               {dokumenScan.status === 'keluar' ? (
                 <p className="mt-2 inline-block bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">Telah Keluar Gerbang</p>
+              ) : dokumenScan.status === 'ditahan' ? (
+                <p className="mt-2 inline-block bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest animate-pulse">BARANG DITAHAN</p>
               ) : (
                 <p className="mt-2 inline-block bg-yellow-400 text-slate-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest animate-pulse">Menunggu Validasi Fisik</p>
               )}
@@ -262,19 +275,21 @@ export default function SecurityPage() {
             </div>
 
             {/* Tombol Aksi Bawah Layar */}
-            {dokumenScan.status !== 'keluar' ? (
+            {dokumenScan.status !== 'keluar' && dokumenScan.status !== 'ditahan' ? (
               <div className="p-4 bg-slate-100 border-t border-slate-200 flex gap-3">
-                <button onClick={handleTahan} className="w-1/3 bg-white text-red-600 font-black py-4 rounded-xl border-2 border-red-200 hover:bg-red-50 active:scale-95 transition uppercase text-sm">
+                <button onClick={() => handleTahan(dokumenScan.nomor_surat)} className="w-1/3 bg-white text-red-600 font-black py-4 rounded-xl border-2 border-red-200 hover:bg-red-50 active:scale-95 transition uppercase text-sm">
                   ❌ Tahan
                 </button>
                 <button onClick={() => handleIzinkanKeluar(dokumenScan.nomor_surat)} className="w-2/3 bg-emerald-500 text-white font-black py-4 rounded-xl shadow-[0_5px_15px_rgba(16,185,129,0.4)] hover:bg-emerald-600 active:scale-95 transition uppercase text-lg">
-                  ✅ Sesuai (Keluar)
+                  ✅ Lolos
                 </button>
               </div>
             ) : (
-              <div className="p-6 bg-slate-800 text-center rounded-b-3xl">
-                <p className="text-emerald-400 font-bold mb-1">✅ Validasi Selesai</p>
-                <p className="text-slate-400 text-sm">Diperiksa oleh {dokumenScan.petugas_security} pada {dokumenScan.waktu_keluar}</p>
+              <div className={`p-6 text-center rounded-b-3xl ${dokumenScan.status === 'keluar' ? 'bg-slate-800' : 'bg-red-900'}`}>
+                <p className={`${dokumenScan.status === 'keluar' ? 'text-emerald-400' : 'text-red-400'} font-bold mb-1`}>
+                  {dokumenScan.status === 'keluar' ? '✅ Validasi Selesai (Lolos)' : '🛑 Validasi Selesai (Ditahan)'}
+                </p>
+                <p className="text-slate-300 text-sm">Diperiksa oleh {dokumenScan.petugas_security} pada {dokumenScan.waktu_keluar}</p>
               </div>
             )}
           </div>
@@ -337,21 +352,25 @@ export default function SecurityPage() {
 
         {/* LOG BUKU TAMU HARIAN */}
         <div>
-          <h3 className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-4 border-b border-slate-700 pb-2">Log Barang Keluar Hari Ini</h3>
+          <h3 className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-4 border-b border-slate-700 pb-2">Log Validasi Hari Ini</h3>
           
           <div className="space-y-4">
             {riwayat.length === 0 ? (
-              <p className="text-center text-slate-500 font-medium py-4 bg-slate-800/50 rounded-2xl border border-slate-700/50 border-dashed">Belum ada barang keluar hari ini.</p>
+              <p className="text-center text-slate-500 font-medium py-4 bg-slate-800/50 rounded-2xl border border-slate-700/50 border-dashed">Belum ada dokumen tervalidasi hari ini.</p>
             ) : (
               riwayat.map(item => (
-                <div key={item.nomor_surat} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex justify-between items-center opacity-80 shadow-md">
+                <div key={item.nomor_surat} className={`p-4 rounded-2xl border flex justify-between items-center opacity-90 shadow-md ${item.status === 'ditahan' ? 'bg-red-900/20 border-red-800' : 'bg-slate-800 border-slate-700'}`}>
                   <div>
-                    <span className="text-emerald-400 text-[10px] font-black uppercase tracking-widest">✅ Lolos Gerbang</span>
+                    {item.status === 'ditahan' ? (
+                      <span className="text-red-400 text-[10px] font-black uppercase tracking-widest">🛑 DITAHAN</span>
+                    ) : (
+                      <span className="text-emerald-400 text-[10px] font-black uppercase tracking-widest">✅ LOLOS GERBANG</span>
+                    )}
                     <h4 className="text-white font-bold text-base mt-1 line-clamp-1">{item.pemohon}</h4>
                     <p className="text-slate-400 text-xs mt-1 font-mono">{item.nomor_surat}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-slate-300 font-bold text-sm">{item.waktu_keluar}</p>
+                    <p className={`${item.status === 'ditahan' ? 'text-red-300' : 'text-slate-300'} font-bold text-sm`}>{item.waktu_keluar}</p>
                     <p className="text-slate-500 text-[10px] uppercase font-bold mt-1">Oleh: {item.petugas_security}</p>
                   </div>
                 </div>
