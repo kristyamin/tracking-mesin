@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase"; // 👈 Ini penting banget buat narik data!
+import { supabase } from "@/lib/supabase"; 
 
 export default function ManajerPage() {
   const router = useRouter();
@@ -14,11 +14,9 @@ export default function ManajerPage() {
 
   // ================= 1. SATPAM RUANGAN (OTENTIKASI BENAR) =================
   useEffect(() => {
-    // Cek tiket abadi dari Gembok Gate Pass
     const savedRole = localStorage.getItem("role_gatepass");
-    const namaUser = localStorage.getItem("nama_user"); // 👈 INI YANG UBAH JADI LOCAL STORAGE
+    const namaUser = localStorage.getItem("nama_user"); // Pastikan ini pakai localStorage sesuai revisi kita sebelumnya!
 
-    // Kalau tiket BUKAN manajer ATAU gak ada nama usernya, tendang ke depan!
     if (savedRole !== 'manajer' || !namaUser) {
       alert("⚠️ Akses ditolak! Silakan masuk melalui gembok utama.");
       router.push("/");
@@ -30,7 +28,6 @@ export default function ManajerPage() {
   }, [router]);
 
   const handleLogout = () => {
-    // Bakar semua kunci permanen biar nggak nyangkut!
     localStorage.removeItem("role_gatepass"); 
     localStorage.removeItem("nama_user"); 
     router.push("/");
@@ -44,7 +41,6 @@ export default function ManajerPage() {
   const [zoomedFoto, setZoomedFoto] = useState<{foto: string, nama: string} | null>(null);
 
   useEffect(() => {
-    // Kalau udah diizinkan masuk, langsung tarik data dari server
     if (!isCheckingAuth && currentUser) {
       fetchDataPengajuan();
     }
@@ -60,7 +56,6 @@ export default function ManajerPage() {
       if (error) throw error;
 
       if (data) {
-        // Sesuaikan nama kolom database dengan desain UI kamu
         const formattedData = data.map(d => ({
           id: d.nomor_surat,
           type: d.tipe_form,
@@ -74,7 +69,8 @@ export default function ManajerPage() {
           tujuan: d.tujuan,
           barang: d.barang || [],
           status: d.status || 'pending',
-          approvedBy: { stefanus: d.acc_stefanus || false, roy: d.acc_roy || false },
+          // TAMBAHAN: Masukkan Rully ke dalam sistem penarik data
+          approvedBy: { stefanus: d.acc_stefanus || false, roy: d.acc_roy || false, rully: d.acc_rully || false },
           tanggalIjin: d.tanggal_ijin,
           jamMulai: d.jam_mulai,
           jamSelesai: d.jam_selesai,
@@ -89,13 +85,14 @@ export default function ManajerPage() {
 
   // ================= 3. LOGIKA FILTER & HILANG OTOMATIS =================
   const filteredPengajuan = pengajuan.filter(item => {
-    if (item.status === 'rejected') return false; // Sembunyikan yang udah ditolak
+    if (item.status === 'rejected') return false; 
     if (item.type !== activeTab) return false;
     
     if (item.type === 'gatepass') {
       return currentUser ? !item.approvedBy[currentUser as keyof typeof item.approvedBy] : true;
     } else {
-      return !(item.approvedBy.stefanus || item.approvedBy.roy);
+      // TAMBAHAN: HRD non-gatepass hilang kalau salah satu (termasuk rully) udah TTD
+      return !(item.approvedBy.stefanus || item.approvedBy.roy || item.approvedBy.rully);
     }
   });
 
@@ -106,7 +103,7 @@ export default function ManajerPage() {
       if (type === 'gatepass') {
         return currentUser ? !item.approvedBy[currentUser as keyof typeof item.approvedBy] : false;
       } else {
-        return !(item.approvedBy.stefanus || item.approvedBy.roy);
+        return !(item.approvedBy.stefanus || item.approvedBy.roy || item.approvedBy.rully);
       }
     }).length;
   };
@@ -116,7 +113,7 @@ export default function ManajerPage() {
   const countSetHari = getBadgeCount('setengah_hari');
   const countKetHadir = getBadgeCount('ket_hadir');
 
-  // ================= 4. FUNGSI APPROVE & REJECT (LANGSUNG TEMBAK SERVER) =================
+  // ================= 4. FUNGSI APPROVE & REJECT =================
   const handleApproveOtomatis = async (id: string) => {
     if (!currentUser) return;
     
@@ -124,45 +121,29 @@ export default function ManajerPage() {
     if (!isConfirmed) return;
 
     try {
-      // 1. Tarik data surat yang lagi diklik
       const itemData = pengajuan.find(p => p.id === id);
       if (!itemData) return;
 
-      // 2. Tentukan siapa yang ngeklik, kolom Supabase mana yang diisi
-      const kolomAcc = currentUser === 'stefanus' ? 'acc_stefanus' : 'acc_roy';
+      // TAMBAHAN: Deteksi otomatis kolom mana yang harus diupdate (Termasuk Rully)
+      const kolomAcc = currentUser === 'stefanus' ? 'acc_stefanus' : currentUser === 'roy' ? 'acc_roy' : 'acc_rully';
       
-      // 3. Siapkan keranjang data yang mau di-update ke database
       let dataUpdate: any = { 
         [kolomAcc]: true 
       };
 
-      // ========================================================
-      // LOGIKA PINTAR PENENTU STATUS (BIAR MUNCUL DI ADMIN)
-      // ========================================================
-      if (itemData.type !== 'gatepass') {
-        // A. Kalau Ijin HRD (Setengah Hari dll), 1 TTD udah cukup! Langsung Approved!
-        dataUpdate.status = 'approved';
-      } else {
-        // B. Kalau Gatepass, cek dulu Manajer SATUNYA udah TTD belum?
-        const manajerSatunyaUdahTTD = currentUser === 'stefanus' ? itemData.approvedBy.roy : itemData.approvedBy.stefanus;
-        
-        if (manajerSatunyaUdahTTD) {
-          // Kalau manajer satunya udah TTD, berarti ini TTD Terakhir. Gas Approved!
-          dataUpdate.status = 'approved';
-        }
-        // Kalau belum, statusnya biarin aja (gak diubah ke approved dulu)
-      }
+      // KARENA ATURAN BARU: 1 TTD SAJA CUKUP UNTUK SEMUA JENIS SURAT
+      // Maka statusnya langsung kita tembak jadi 'approved' detik itu juga!
+      dataUpdate.status = 'approved';
 
-      // 4. Tembak update-an ke Supabase!
       const { error } = await supabase.from('form_pengajuan').update(dataUpdate).eq('nomor_surat', id);
 
       if (error) throw error;
 
-      const namaManajer = currentUser === 'stefanus' ? 'Stefanus' : 'Roy';
+      const namaManajer = currentUser.charAt(0).toUpperCase() + currentUser.slice(1);
       const jamAcc = new Date().toLocaleTimeString('id-ID', { hour12: false });
-      alert(`✅ Tanda Tangan Digital Pak ${namaManajer} berhasil dibubuhkan pada ${jamAcc} WIB!`);
+      alert(`✅ Tanda Tangan Digital Pak ${namaManajer} berhasil dibubuhkan pada ${jamAcc} WIB! Surat siap dicetak oleh Admin.`);
       
-      fetchDataPengajuan(); // Refresh data dari server biar kartunya hilang
+      fetchDataPengajuan(); 
       setSelectedItem(null);
     } catch (err) {
       alert("❌ Gagal menyimpan persetujuan ke server.");
@@ -182,10 +163,10 @@ export default function ManajerPage() {
 
       if (error) throw error;
 
-      const namaManajer = currentUser === 'stefanus' ? 'Stefanus' : 'Roy';
+      const namaManajer = currentUser ? currentUser.charAt(0).toUpperCase() + currentUser.slice(1) : 'Manajer';
       alert(`❌ Pengajuan ${id} DITOLAK oleh Pak ${namaManajer}!\nAlasan: ${alasanTolak}`);
       
-      fetchDataPengajuan(); // Refresh data
+      fetchDataPengajuan(); 
       setSelectedItem(null);
       setIsRejecting(false);
       setAlasanTolak("");
@@ -275,7 +256,7 @@ export default function ManajerPage() {
                       <p className="text-[11px] text-slate-400 font-medium">{item.tanggal} • {item.jam}</p>
                     </div>
                     
-                    {item.approvedBy.stefanus || item.approvedBy.roy ? (
+                    {item.approvedBy.stefanus || item.approvedBy.roy || item.approvedBy.rully ? (
                       <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Diproses</span>
                     ) : (
                       <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider animate-pulse">Wait ACC</span>
@@ -407,7 +388,8 @@ export default function ManajerPage() {
                     <span className="text-[10px] uppercase tracking-wider">Tolak</span>
                   </button>
                   <div className="w-3/4 flex flex-col gap-2">
-                    {currentUser === 'stefanus' || currentUser === 'roy' ? (
+                    {/* TAMBAHAN: Rully juga bisa ngelihat dan ngeklik tombol ini */}
+                    {currentUser === 'stefanus' || currentUser === 'roy' || currentUser === 'rully' ? (
                       <button 
                         disabled={selectedItem.approvedBy[currentUser as keyof typeof selectedItem.approvedBy]}
                         onClick={() => handleApproveOtomatis(selectedItem.id)}
@@ -417,15 +399,8 @@ export default function ManajerPage() {
                       </button>
                     ) : null}
 
-                    {selectedItem.type === 'gatepass' && (
-                      <div className="w-full bg-slate-50 text-slate-500 font-medium py-2 rounded-xl text-[10px] flex justify-center items-center border border-slate-200 uppercase tracking-widest">
-                        {currentUser === 'stefanus' ? (
-                           selectedItem.approvedBy.roy ? '✅ Pak Roy Sudah ACC' : '⏳ Menunggu ACC Pak Roy'
-                        ) : (
-                           selectedItem.approvedBy.stefanus ? '✅ Pak Stefanus Sudah ACC' : '⏳ Menunggu ACC Pak Stefanus'
-                        )}
-                      </div>
-                    )}
+                    {/* CATATAN: Indikator "Menunggu ACC Pak Stefanus/Roy" udah aku buang 
+                        karena sekarang 1 TTD aja langsung lolos, jadi nggak perlu nunggu-nungguan lagi! */}
                   </div>
                 </div>
               )}

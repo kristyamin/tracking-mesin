@@ -72,7 +72,7 @@ export default function AdminPage() {
           tujuan: d.tujuan,
           barang: d.barang || [],
           status: d.status || 'pending',
-          approvedBy: { stefanus: d.acc_stefanus || false, roy: d.acc_roy || false },
+          approvedBy: { stefanus: d.acc_stefanus || false, roy: d.acc_roy || false, rully: d.acc_rully || false },
           tanggalIjin: d.tanggal_ijin,
           jamMulai: d.jam_mulai,
           jamSelesai: d.jam_selesai,
@@ -307,23 +307,40 @@ export default function AdminPage() {
                     <p className="text-[9px] text-gray-500 font-bold uppercase bg-white/50 px-2 rounded-full inline-block">Scan Security</p>
                   </div>
                   
-                  <div className="flex gap-10">
-                    <div className="text-center">
-                      <p className="text-xs mb-10 bg-white/50 px-2 rounded-full inline-block">Disetujui Oleh,</p>
+                 {/* --- PERUBAHAN: 3 KOLOM TANDA TANGAN (UKURAN DIPERBESAR) --- */}
+                  <div className="flex justify-between w-full px-2 sm:px-4 mt-6">
+                    
+                    {/* 1. ROY (KIRI) */}
+                    <div className="text-center w-1/3">
+                      <p className="text-[11px] mb-12 bg-white/50 px-1 rounded-full inline-block">Mengetahui,</p>
                       <div className="relative">
-                        {printDocument.approvedBy.stefanus && <img src="/TTD om stev 2.png" className="absolute -top-20 left-1/2 -translate-x-1/2 w-[200px] max-w-none contrast-200 brightness-75 z-20" alt="TTD Stefanus" />}
-                      </div>
-                      <p className="font-bold underline relative z-10 text-sm">Stefanus</p>
-                      <p className="text-[9px] text-gray-500 relative z-10 bg-white/50 px-2 rounded-full inline-block mt-0.5">Digitally Signed</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs mb-10 bg-white/50 px-2 rounded-full inline-block">Mengetahui,</p>
-                      <div className="relative">
-                        {printDocument.approvedBy.roy && <img src="/TTD Roy.png" className="absolute -top-14 left-1/2 -translate-x-1/2 w-[110px] max-w-none contrast-200 brightness-80 z-20" alt="TTD Roy" />}
+                        {printDocument.approvedBy.roy && <img src="/TTD Roy.png" className="absolute -top-16 left-1/2 -translate-x-1/2 w-[130px] max-w-none contrast-200 brightness-80 z-20" alt="TTD Roy" />}
                       </div>
                       <p className="font-bold underline relative z-10 text-sm">Roy</p>
-                      <p className="text-[9px] text-gray-500 relative z-10 bg-white/50 px-2 rounded-full inline-block mt-0.5">Digitally Signed</p>
+                      <p className="text-[9px] text-gray-500 relative z-10 mt-0.5">Digitally Signed</p>
                     </div>
+
+                    {/* 2. STEFANUS (TENGAH) */}
+                    <div className="text-center w-1/3">
+                      <p className="text-[11px] mb-12 bg-white/50 px-1 rounded-full inline-block">Disetujui Oleh,</p>
+                      <div className="relative">
+                        {printDocument.approvedBy.stefanus && <img src="/TTD om stev 2.png" className="absolute -top-20 left-1/2 -translate-x-1/2 w-[220px] max-w-none contrast-200 brightness-75 z-20" alt="TTD Stefanus" />}
+                      </div>
+                      <p className="font-bold underline relative z-10 text-sm">Stefanus</p>
+                      <p className="text-[9px] text-gray-500 relative z-10 mt-0.5">Digitally Signed</p>
+                    </div>
+
+                    {/* 3. RULLY (KANAN) */}
+                    <div className="text-center w-1/3">
+                      <p className="text-[11px] mb-12 bg-white/50 px-1 rounded-full inline-block">Mengetahui,</p>
+                      <div className="relative">
+                        {/* PASTIKAN NAMA FILE INI SAMA DENGAN NAMA GAMBAR DI FOLDER PUBLIC */}
+                        {printDocument.approvedBy.rully && <img src="/TTD Rully.png" className="absolute -top-16 left-1/2 -translate-x-1/2 w-[130px] max-w-none contrast-200 brightness-80 z-20" alt="TTD Rully" />}
+                      </div>
+                      <p className="font-bold underline relative z-10 text-sm">Rully</p>
+                      <p className="text-[9px] text-gray-500 relative z-10 mt-0.5">Digitally Signed</p>
+                    </div>
+                    
                   </div>
                 </div>
 
@@ -585,8 +602,8 @@ export default function AdminPage() {
           ) : (
             filteredData.map((item) => {
               const fullyApproved = item.type === 'gatepass' 
-                ? (item.approvedBy.stefanus && item.approvedBy.roy) 
-                : (item.approvedBy.stefanus || item.approvedBy.roy);
+                ? (item.approvedBy.stefanus || item.approvedBy.roy || item.approvedBy.rully) 
+                : (item.approvedBy.stefanus || item.approvedBy.roy || item.approvedBy.rully);
 
               return (
                 <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between hover:shadow-md transition">
