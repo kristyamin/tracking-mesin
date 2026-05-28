@@ -83,27 +83,41 @@ export default function ManajerPage() {
     }
   };
 
-  // ================= 3. LOGIKA FILTER & HILANG OTOMATIS =================
+ // ================= 3. LOGIKA FILTER & HILANG OTOMATIS =================
   const filteredPengajuan = pengajuan.filter(item => {
-    if (item.status === 'rejected') return false; 
+    // Sembunyikan yang udah ditolak, keluar gerbang, atau ditahan
+    if (item.status === 'rejected' || item.status === 'keluar' || item.status === 'ditahan') return false; 
     if (item.type !== activeTab) return false;
     
     if (item.type === 'gatepass') {
-      return currentUser ? !item.approvedBy[currentUser as keyof typeof item.approvedBy] : true;
+      // LOGIKA GATEPASS: Inbox Pribadi! Cuma hilang kalau dia SENDIRI udah TTD.
+      if (currentUser) return !item.approvedBy[currentUser as keyof typeof item.approvedBy];
+      return false;
     } else {
-      // TAMBAHAN: HRD non-gatepass hilang kalau salah satu (termasuk rully) udah TTD
-      return !(item.approvedBy.stefanus || item.approvedBy.roy || item.approvedBy.rully);
+      // LOGIKA FORM HRD (Ijin Keluar, Set Hari, Ket Hadir)
+      if (currentUser === 'rully') {
+        // Rully (HRD): Cuma hilang kalau dia sendiri udah TTD
+        return !item.approvedBy.rully; 
+      } else if (currentUser === 'stefanus' || currentUser === 'roy') {
+        // Manajer (Roy/Stefanus): Langsung HILANG buat berdua kalau SALAH SATU udah TTD!
+        return !(item.approvedBy.stefanus || item.approvedBy.roy);
+      }
+      return false;
     }
   });
 
   const getBadgeCount = (type: string) => {
     return pengajuan.filter(item => {
-      if (item.status === 'rejected') return false;
+      if (item.status === 'rejected' || item.status === 'keluar' || item.status === 'ditahan') return false;
       if (item.type !== type) return false;
+      
       if (type === 'gatepass') {
-        return currentUser ? !item.approvedBy[currentUser as keyof typeof item.approvedBy] : false;
+        if (currentUser) return !item.approvedBy[currentUser as keyof typeof item.approvedBy];
+        return false;
       } else {
-        return !(item.approvedBy.stefanus || item.approvedBy.roy || item.approvedBy.rully);
+        if (currentUser === 'rully') return !item.approvedBy.rully;
+        if (currentUser === 'stefanus' || currentUser === 'roy') return !(item.approvedBy.stefanus || item.approvedBy.roy);
+        return false;
       }
     }).length;
   };

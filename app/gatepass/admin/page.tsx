@@ -416,9 +416,15 @@ export default function AdminPage() {
                   <p className="font-bold underline">( {printDocument.approvedBy.stefanus ? 'Stefanus' : printDocument.approvedBy.roy ? 'Roy' : '......................'} )</p>
                 </div>
                 
+                {/* --- KOLOM HRD (BISA ELEKTRIK ATAU MANUAL) --- */}
                 <div className="w-1/4">
                   <p className="mb-20 font-bold">Menyetujui</p>
-                  <p className="font-bold underline">( HRD )</p>
+                  <div className="relative">
+                    {/* Kalau Pak Rully udah klik ACC di aplikasi, TTD-nya langsung muncul! */}
+                    {printDocument.approvedBy.rully && <img src="/TTD pak rully.png" className="absolute -top-17 left-1/2 -translate-x-1/2 w-[110px] max-w-none contrast-200 brightness-80" alt="TTD Rully" />}
+                  </div>
+                  <p className="font-bold underline relative z-10">{printDocument.approvedBy.rully ? 'Rully' : '( HRD )'}</p>
+                  {printDocument.approvedBy.rully && <p className="text-[10px] text-gray-500 relative z-10 mt-0.5">Digitally Signed</p>}
                 </div>
 
                 {printDocument.type !== 'ket_hadir' && (
