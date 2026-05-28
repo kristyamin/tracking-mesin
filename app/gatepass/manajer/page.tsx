@@ -16,7 +16,7 @@ export default function ManajerPage() {
   useEffect(() => {
     // Cek tiket abadi dari Gembok Gate Pass
     const savedRole = localStorage.getItem("role_gatepass");
-    const namaUser = sessionStorage.getItem("nama_user"); // Nangkap nama stefanus/roy
+    const namaUser = localStorage.getItem("nama_user"); // 👈 INI YANG UBAH JADI LOCAL STORAGE
 
     // Kalau tiket BUKAN manajer ATAU gak ada nama usernya, tendang ke depan!
     if (savedRole !== 'manajer' || !namaUser) {
@@ -30,8 +30,9 @@ export default function ManajerPage() {
   }, [router]);
 
   const handleLogout = () => {
-    sessionStorage.clear();
-    localStorage.removeItem("role_gatepass"); // Kunci yang benar dibakar!
+    // Bakar semua kunci permanen biar nggak nyangkut!
+    localStorage.removeItem("role_gatepass"); 
+    localStorage.removeItem("nama_user"); 
     router.push("/");
   };
 

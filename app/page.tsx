@@ -17,17 +17,16 @@ export default function Home() {
   // ========================================================
   useEffect(() => {
     const gpRole = localStorage.getItem("role_gatepass");
-    const permanentUser = localStorage.getItem("nama_user_permanent");
+    const permanentUser = localStorage.getItem("nama_user"); // 👈 Kuncinya disamain
     
     // Kalau terdeteksi sebagai Manajer, langsung buatkan akses sah & bypass masuk!
     if (gpRole && gpRole !== "admin") {
       sessionStorage.setItem("akses_gatepass", "SAH");
-      if (permanentUser) sessionStorage.setItem("nama_user", permanentUser);
       
       if (gpRole === "super_admin_gp") router.push("/gatepass/super-admin");
       else if (gpRole === "manajer") router.push("/gatepass/manajer");
     }
-  }, []);
+  }, [router]);
   
   // --- STATE PENCARIAN & DATA (SLIDE 1) ---
   const [idSearch, setIdSearch] = useState("");
@@ -170,42 +169,44 @@ export default function Home() {
           })
       });
       const result = await response.json();
+      
       if (!response.ok || !result.data) {
         alert("❌ Login Gagal! Username atau Password salah.");
         setCredsGatepass({ username: "", password: "" });
       } else {
         const data = result.data;
         sessionStorage.setItem("akses_gatepass", "SAH"); 
-        sessionStorage.setItem("nama_user", data.username);
 
         // PINTU PINTAR KHUSUS GATEPASS (UPGRADE: MANAJER ABADI, ADMIN TEMPORER)
         if (data.role === "super_admin_gp") {
           localStorage.setItem("role_gatepass", "super_admin_gp");
-          localStorage.setItem("nama_user_permanent", data.username); // Simpan nama abadi
+          localStorage.setItem("nama_user", data.username); // 👈 Simpan abadi
           router.push("/gatepass/super-admin");
         } 
         else if (data.role === "boss" || data.role === "manager_gp" || data.role === "super_admin") {
           localStorage.setItem("role_gatepass", "manajer");
-          localStorage.setItem("nama_user_permanent", data.username); // Simpan nama abadi
+          localStorage.setItem("nama_user", data.username); // 👈 Simpan abadi
           router.push("/gatepass/manajer");
         } 
         else if (data.role === "admin_req" || data.role === "admin") {
-          // ADMIN CUMA PAKAI SESSION STORAGE, JADI HAPUS JEJAK LOCALSTORAGE-NYA!
+          // ADMIN CUMA PAKAI SESSION STORAGE, HAPUS JEJAK LOCAL-NYA!
           localStorage.removeItem("role_gatepass");
-          localStorage.removeItem("nama_user_permanent");
+          localStorage.removeItem("nama_user");
+          sessionStorage.setItem("nama_user", data.username); // Admin masuk session aja
           router.push("/gatepass/admin");
         }
         else {
           alert("Akses Ditolak: Anda tidak memiliki wewenang untuk sistem Gatepass.");
         }
       } 
-        } catch (err) {
-          alert("Terjadi kesalahan jaringan.");
-          setCredsGatepass({ username: "", password: "" }); 
+    } catch (err) {
+      alert("Terjadi kesalahan jaringan.");
+      setCredsGatepass({ username: "", password: "" }); 
     } 
     
     setLoading(false);
-  }; 
+  };
+  
   return (
     <>
       <Swiper 
