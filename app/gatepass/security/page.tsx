@@ -9,11 +9,12 @@ export default function SecurityPage() {
   const router = useRouter();
 
   // ==============================================
-  // FITUR 1: SISTEM LOGIN SECURITY (Anti Hilang)
+  // FITUR 1: SISTEM LOGIN SECURITY (Nembak Supabase)
   // ==============================================
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [securityName, setSecurityName] = useState<string | null>(null);
-  const [inputName, setInputName] = useState("");
+  const [inputPin, setInputPin] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false); // Buat efek loading pas ngecek PIN
 
   // ==============================================
   // FITUR 2: DETEKSI SCAN DARI KAMERA HP
@@ -29,22 +30,19 @@ export default function SecurityPage() {
   const [waktuSekarang, setWaktuSekarang] = useState("");
 
   useEffect(() => {
-    // 1. Cek Sesi Security di Ingatan Abadi HP
     const savedName = localStorage.getItem("nama_security");
     if (savedName) setSecurityName(savedName);
 
-    // 2. Cek apakah Satpam baru saja men-scan QR Code pakai Kamera HP
     const params = new URLSearchParams(window.location.search);
     const suratDariQR = params.get("surat");
     if (suratDariQR) {
       setScannedSuratId(suratDariQR);
-      if (savedName) fetchDokumenScan(suratDariQR); // Langsung tarik data kalau udah login!
+      if (savedName) fetchDokumenScan(suratDariQR); 
     }
 
     setIsCheckingAuth(false);
   }, []);
 
-  // Update Jam Real-time di Pos Satpam
   useEffect(() => {
     const updateWaktu = () => {
       const now = new Date();
@@ -57,7 +55,6 @@ export default function SecurityPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Tarik Data Buku Tamu Harian
   useEffect(() => {
     if (securityName && !scannedSuratId) {
       fetchLogHarian();
@@ -80,7 +77,7 @@ export default function SecurityPage() {
       setDokumenScan(data);
     } catch (err) {
       console.error(err);
-      setDokumenScan(null); // Tampilkan halaman "Surat Tidak Ditemukan"
+      setDokumenScan(null); 
     }
     setLoadingScan(false);
   };
@@ -91,7 +88,7 @@ export default function SecurityPage() {
       const { data, error } = await supabase
         .from('form_pengajuan')
         .select('*')
-        .in('status', ['keluar', 'ditahan']) // Tampilkan yang lolos DAN yang ditahan hari ini!
+        .in('status', ['keluar', 'ditahan']) 
         .eq('tanggal', today)   
         .order('waktu_keluar', { ascending: false });
 
@@ -102,28 +99,53 @@ export default function SecurityPage() {
   };
 
   // ==============================================
-  // FUNGSI AKSI SECURITY
+  // FUNGSI AKSI SECURITY (CEK PIN KE DATABASE)
   // ==============================================
-  const handleLogin = () => {
-    if (inputName.trim().length < 3) {
-      alert("❌ Masukkan nama petugas yang valid!");
+  const handleLogin = async () => {
+    if (inputPin.trim().length < 4) {
+      alert("⚠️ Masukkan 4 digit PIN Anda!");
       return;
     }
-    localStorage.setItem("nama_security", inputName.toUpperCase());
-    setSecurityName(inputName.toUpperCase());
 
-    if (scannedSuratId) fetchDokumenScan(scannedSuratId);
+    setIsLoggingIn(true);
+
+    try {
+      // 1. Tembak ke Supabase, cari adakah PIN yang cocok di tabel akun_security
+      const { data, error } = await supabase
+        .from('akun_security')
+        .select('nama')
+        .eq('pin', inputPin)
+        .single(); // Ambil 1 data aja
+
+      // 2. Kalau error atau data kosong (berarti PIN salah)
+      if (error || !data) {
+        alert("❌ PIN Tidak Valid! Anda tidak terdaftar sebagai petugas keamanan.");
+        setInputPin(""); // Kosongkan layar biar bisa ngetik lagi
+        setIsLoggingIn(false);
+        return;
+      }
+
+      // 3. Kalau PIN Benar, ambil nama dari database
+      const namaSatpam = data.nama;
+      localStorage.setItem("nama_security", namaSatpam);
+      setSecurityName(namaSatpam);
+
+      if (scannedSuratId) fetchDokumenScan(scannedSuratId);
+
+    } catch (err) {
+      alert("❌ Terjadi kesalahan jaringan. Cek koneksi internet Anda.");
+    }
+    setIsLoggingIn(false);
   };
 
   const handleLogout = () => {
     if(confirm("Ganti shift penjagaan? (Logout)")) {
       localStorage.removeItem("nama_security");
       setSecurityName(null);
-      setInputName("");
+      setInputPin("");
     }
   };
 
-  // AKSI 1: LOLOSKAN BARANG
   const handleIzinkanKeluar = async (id: string) => {
     if(confirm("Validasi fisik barang sesuai dengan foto? Izinkan keluar?")) {
       const jamKeluar = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB";
@@ -146,7 +168,6 @@ export default function SecurityPage() {
     }
   };
 
-  // AKSI 2: TAHAN BARANG (Update database juga!)
   const handleTahan = async (id: string) => {
     if(confirm("❌ Yakin menahan barang ini? Pemohon harus kembali ke Admin!")) {
       const jamTahan = new Date().toLocaleTimeString('id-ID', { hour12: false }) + " WIB";
@@ -187,24 +208,28 @@ export default function SecurityPage() {
               </div>
             </div>
             <h1 className="text-2xl font-extrabold text-white tracking-widest uppercase">Pos Security</h1>
-            <p className="text-slate-400 text-sm mt-1">Validasi Dokumen Fisik</p>
+            <p className="text-slate-400 text-sm mt-1">Sistem Keamanan Berlapis</p>
           </div>
           <div className="mb-8">
-            <label className="block text-slate-300 font-bold mb-2 text-sm uppercase tracking-wider">Nama Petugas Jaga</label>
+            <label className="block text-slate-300 font-bold mb-2 text-sm uppercase tracking-wider text-center">Masukkan PIN Akses</label>
             <input 
-              type="text" 
-              placeholder="Contoh: BAGAS" 
-              className="w-full bg-slate-900 border border-slate-600 p-4 rounded-xl focus:ring-2 focus:ring-yellow-500 text-white font-black text-center uppercase text-xl placeholder-slate-600" 
-              value={inputName} 
-              onChange={(e) => setInputName(e.target.value)} 
+              type="password" 
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
+              placeholder="••••" 
+              className="w-full bg-slate-900 border border-slate-600 p-4 rounded-xl focus:ring-2 focus:ring-yellow-500 text-white font-black text-center text-4xl tracking-[0.5em] placeholder-slate-700 transition-all shadow-inner" 
+              value={inputPin} 
+              onChange={(e) => setInputPin(e.target.value)} 
               onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              disabled={isLoggingIn}
             />
           </div>
-          <button onClick={handleLogin} className="w-full bg-yellow-500 text-slate-900 font-black py-4 rounded-xl shadow-[0_0_15px_rgba(234,179,8,0.3)] hover:bg-yellow-400 active:scale-95 transition text-lg uppercase tracking-wider">
-            Mulai Shift Jaga 🛡️
+          <button disabled={isLoggingIn} onClick={handleLogin} className="w-full bg-yellow-500 text-slate-900 font-black py-4 rounded-xl shadow-[0_0_15px_rgba(234,179,8,0.3)] hover:bg-yellow-400 active:scale-95 transition text-lg uppercase tracking-wider disabled:opacity-50">
+            {isLoggingIn ? "Memeriksa PIN..." : "Verifikasi PIN 🛡️"}
           </button>
           
-          {scannedSuratId && <p className="text-yellow-500 text-xs text-center mt-4 bg-yellow-900/30 p-2 rounded-lg font-bold">⚠️ Anda harus login shift dulu sebelum memindai QR Code ini.</p>}
+          {scannedSuratId && <p className="text-yellow-500 text-xs text-center mt-4 bg-yellow-900/30 p-2 rounded-lg font-bold">⚠️ Anda harus otorisasi PIN sebelum memindai QR Code.</p>}
 
           <div className="mt-6 text-center">
             <Link href="/" className="text-slate-500 text-sm underline hover:text-slate-300">Kembali ke Portal Utama</Link>
