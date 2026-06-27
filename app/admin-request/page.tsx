@@ -292,7 +292,7 @@ export default function AdminRequestDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans text-slate-800 relative">
+    <div className="min-h-screen print:min-h-0 print:m-0 print:overflow-hidden bg-slate-100 font-sans text-slate-800 relative">
       <div className="print:hidden p-6 md:p-12 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8 bg-white p-6 shadow-sm border-t-4 border-slate-900 rounded-sm">
           <div>
@@ -615,7 +615,7 @@ export default function AdminRequestDashboard() {
       {/* 🖨️ MODE PRINT 1: SURAT TUGAS / TICKET */}
       {/* ========================================== */}
       {printMode === 'TICKET' && selectedPrint && (
-        <div className="hidden print:block bg-white text-black p-8 font-sans w-full max-w-[210mm] mx-auto min-h-[297mm]">
+        <div className="hidden print:block bg-white text-black p-8 font-sans w-full max-w-[210mm] mx-auto print:min-h-0">
           <div className="flex justify-between items-end border-b-4 border-slate-900 pb-4 mb-6">
             <div>
               <h1 className="text-3xl font-black uppercase tracking-tighter text-slate-900">PT DJITOE MESINDO</h1>
@@ -696,7 +696,7 @@ export default function AdminRequestDashboard() {
       {/* 🖨️ MODE PRINT 2: LAPORAN BULANAN (HARI) */}
       {/* ========================================== */}
       {printMode === 'REPORT' && (
-        <div className="hidden print:block bg-white text-black p-8 font-sans w-full max-w-[210mm] mx-auto min-h-[297mm]">
+        <div className="hidden print:block bg-white text-black p-8 font-sans w-full max-w-[210mm] mx-auto print:min-h-0">
           <div className="text-center mb-8 border-b-4 border-slate-900 pb-4">
             <h1 className="text-3xl font-black uppercase tracking-tighter">PT DJITOE MESINDO</h1>
             <h2 className="text-lg font-bold uppercase mt-1">Laporan Service Selesai (Completed)</h2>
